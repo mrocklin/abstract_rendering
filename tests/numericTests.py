@@ -1,6 +1,6 @@
 import unittest
-import abstract_rendering.numeric as numeric
 import numpy as np
+import abstract_rendering.numeric as numeric
 
 class SpreadTests(unittest.TestCase):
   def run_spread(self, spread, in_vals, expected):

@@ -119,9 +119,11 @@ class ToLine(Shaper):
     self.fns = [tox1, toy1, tox2, toy2]
 
 class ToPoint(Shaper):
-  """Create a single point, using functions to build x,y,0,0"""
+  """Create a single point, using functions to build x,y,0,0
+     Can accept more than just tox/toy arguments, but ignores them.
+  """
   code = ShapeCodes.POINT
-  def __init__(self, tox, toy, tow, toh):
+  def __init__(self, tox, toy, *args):
     self.fns = [tox, toy,lambda(x): 0,lambda(x): 0]
 
 #### Utilities for shapers....
