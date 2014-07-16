@@ -46,8 +46,8 @@ mk_buff.restype = ctypes.py_object
 
 def _projectRects(viewxform, inputs, outputs, use_dispatch = False):
     if (inputs.flags.f_contiguous): 
-      inputs = inputs.T
-      outputs = outputs.T
+        inputs = inputs.T
+        outputs = outputs.T
 
     assert(len(inputs.shape) == 2 and inputs.shape[0] == 4)
     assert(inputs.shape == outputs.shape)
