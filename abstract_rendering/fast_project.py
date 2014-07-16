@@ -85,6 +85,7 @@ def _projectRectsGenerator(viewxform,
                            use_dispatch = False):
     if (inputs.flags.f_contiguous):
         inputs = inputs.T
+        # FIXME: outputs is undefined?
         outputs = outputs.T
 
     assert(len(inputs.shape) == 2 and inputs.shape[0] == 4)

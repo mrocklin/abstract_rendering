@@ -19,24 +19,28 @@ except ImportError:
     print "Error loading numba."
     autojit = lambda f: f
 
+# FIXME: This should attempt a relative import of the transform
+# extension module, instead of directly loading a shared lib name
 _lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
 
-############################    Core System ####################
+############################ Core System ####################
 def glyphAggregates(points, shapeCode, val, default):
-    """Create a set of aggregates fo a single glyph.    The set of aggregates will be
-         tight to the bound box of the shape but may not be completely filled 
-         (thus the need for both 'val' and 'default').
+    """Create a set of aggregates fo a single glyph. The set of aggregates will be
+       tight to the bound box of the shape but may not be completely filled 
+       (thus the need for both 'val' and 'default').
 
-         * points -- Points that define the glyph
-         * shapeCode -- Code that indicates how to interpret the points
-         * val -- Value to place in bins that are hit by the shape
-         * default -- Value to place in bins not hit by the shape
+       * points -- Points that define the glyph
+       * shapeCode -- Code that indicates how to interpret the points
+       * val -- Value to place in bins that are hit by the shape
+       * default -- Value to place in bins not hit by the shape
     """
 
-    def scalar(array, val): array.fill(val)
-    def nparray(array,val): array[:] = val
+    def scalar(array, val): 
+        array.fill(val)
     
- 
+    def nparray(array, val):
+        array[:] = val
+    
     if type(val) == np.ndarray:
         fill = nparray 
         extShape = val.shape
@@ -70,7 +74,6 @@ def render(glyphs, info, aggregator, shader, screen,ivt):
     * shader -- Converts aggregates to other aggregates (often colors)
     * screen -- (width,height) of the canvas
     * ivt -- INVERSE view transform (converts pixels to canvas space)
-
     """
     projected = project(glyphs, ivt.inverse())
     aggregates = aggregate(projected, info, aggregator, screen)
@@ -81,8 +84,8 @@ def render(glyphs, info, aggregator, shader, screen,ivt):
 def project(glyphs, viewxform):
     """Project the points found in the glyphset according to the view transform.
 
-     * viewxform -- convert canvas space to pixel space
-     * glyphs -- set of glyphs (represented as [x,y,w,h,...]
+    * viewxform -- convert canvas space to pixel space
+    * glyphs -- set of glyphs (represented as [x,y,w,h,...]
     """
     points = glyphs.points()
     out = np.empty_like(points, dtype=np.int32)
@@ -90,23 +93,29 @@ def project(glyphs, viewxform):
     
     #Ensure visilibity, make sure w/h are always at least one
     #TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
-    for i in xrange(0,out.shape[0]):
-        if out[i,0] == out[i,2]: out[i,2] += 1
-        if out[i,1] == out[i,3]: out[i,3] += 1
+    for i in xrange(0, out.shape[0]):
+        if out[i,0] == out[i,2]:
+            out[i,2] += 1
+        if out[i,1] == out[i,3]:
+            out[i,3] += 1
 
-    return glyphset.Glyphset(out, glyphs.data(), glyphset.Literals(glyphs.shaper.code))
+    return glyphset.Glyphset(out, glyphs.data(), 
+            glyphset.Literals(glyphs.shaper.code))
 
 def aggregate(glyphs, info, aggregator, screen):
         (width, height) = screen
 
-        infos = [info(point, data) for point, data in zip(glyphs.points(), glyphs.data())] #TODO: vectorize
+        #TODO: vectorize
+        infos = [info(point, data) for point, data in \
+                 zip(glyphs.points(), glyphs.data())]
         aggregates = aggregator.allocate(width, height, glyphs, infos)
         for idx, points in enumerate(glyphs.points()):
             aggregator.combine(aggregates, points, glyphs.shaper.code, infos[idx])
         return aggregates
 
 
-#TODO: Add specialization here.  Take a 3rd argument 'specailizer'  if ommited, just use aggregates
+#TODO: Add specialization here.  Take a 3rd argument 'specializer'; if omitted,
+# just use aggregates
 def shade(aggregates, shader):
      """Convert a set of aggregate into another set of aggregates
         according to some data shader.  Many common cases, the result
@@ -142,7 +151,7 @@ class Aggregator(object):
         """
         Combine multiple sets of aggregates.
 
-        * *vals - list of numpy arrays with type out_type
+        * vals - list of numpy arrays with type out_type
         """
         pass
 
@@ -151,8 +160,8 @@ class Aggregator(object):
 class Shader(object):
     def makegrid(self, grid):
         """Create an output grid.  
-             Default implementation creates one of the same width/height of the input
-             suitable for colors (dept 4, unit8).
+           Default implementation creates one of the same width/height of the input
+           suitable for colors (dept 4, unit8).
         """
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
@@ -163,7 +172,7 @@ class Shader(object):
     
     def __add__(self, other): 
         """Extend this shader by executing another in sequence."""
-        if (not isinstance(other, Shader)): 
+        if (not isinstance(other, Shader)):
                 raise TypeError("Can only extend with a shader.  Received a " + str(type(other)))
         return Seq(self, other) 
 
@@ -185,9 +194,11 @@ class Seq(Shader):
         return grid
 
     def __add__(self, other):
-        if (other is None) : return self
-        if (not isinstance(other, Shader)): 
-                raise TypeError("Can only extend shader with another shader.    Received a " + str(type(other)))
+        if (other is None):
+            return self
+
+        elif (not isinstance(other, Shader)):
+            raise TypeError("Can only extend shader with another shader. Received a " + str(type(other)))
         return Seq(list(self._parts) + other) 
 
 
@@ -196,24 +207,24 @@ class PixelAggregator(Aggregator):
         self.pixelfunc = pixelfunc
 
     def aggregate(self, grid):
-            outgrid = np.empty_like(self._projected, dtype=np.int32)
-            #outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
-            outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids), self._projected.flat)
+        outgrid = np.empty_like(self._projected, dtype=np.int32)
+        #outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
+        outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids), self._projected.flat)
 
 
 class PixelShader(Shader):
-    """Data shader that does non-vectorized per-pixel shading."""
+    """ Data shader that does non-vectorized per-pixel shading. """
 
     def __init__(self, pixelfunc, prefunc):
         self.pixelfunc = pixelfunc
         self.prefunc = prefunc
     
     def _pre(self, grid):
-        """Executed exactly once before pixelfunc is called on any cell."""
+        """ Executed exactly once before pixelfunc is called on any cell. """
         pass
 
     def pixelfunc(grid, x, y):
-        """Override this method.    It will be called for each pixel in the grid."""
+        """Override this method. It will be called for each pixel in the grid."""
         raise NotImplementedError
 
     def shade(self, grid):
@@ -237,20 +248,21 @@ class AffineTransform(list):
         self.sy=sy
 
     def trans(self, x, y):
-        """Transform a passed point."""
+        """ Transform a passed point """
         x = self.sx * x + self.tx
         y = self.sy * y + self.ty
         return (x, y)
 
     def transform(self, glyph):
-        """Transform a passed glyph (somethign with x,y,w,h)"""
+        """ Transform a passed glyph (somethign with x,y,w,h) """
         (p1x,p1y) = self.trans(glyph.x, glyph.y)
         (p2x,p2y) = self.trans(glyph.x+glyph.width, glyph.y+glyph.height)
         w = p2x-p1x
         h = p2y-p1y
         return Glyph(p1x, p1y, w, h, glyph.props)
 
-    def asarray(self): return np.array(self)
+    def asarray(self):
+        return np.array(self)
 
     def inverse(self):
         return AffineTransform(-self.tx/self.sx, -self.ty/self.sy, 1/self.sx, 1/self.sy)
@@ -294,7 +306,7 @@ def contains(px, glyph):
 def containing(px, glyphs):
     items = []
     for g in glyphs:
-        if contains(px, g): 
+        if contains(px, g):
             items.append(g)
             
     return items
@@ -353,11 +365,11 @@ def main():
     ivt = zoom_fit(screen,glyphs.bounds())
 
     image = render(glyphs, 
-                                 infos.id(),
-                                 numeric.Count(), 
-                                 numeric.AbsSegment(Color(0,0,0,0), Color(255,255,255,255), .5),
-                                 screen, 
-                                 ivt)
+                 infos.id(),
+                 numeric.Count(), 
+                 numeric.AbsSegment(Color(0,0,0,0), Color(255,255,255,255), .5),
+                 screen, 
+                 ivt)
 
     print image
 
