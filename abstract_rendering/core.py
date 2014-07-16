@@ -241,6 +241,7 @@ class PixelShader(Shader):
 
 class AffineTransform(list):
     def __init__(self, tx, ty, sx, sy):
+        # FIXME: This should be implemented via self.extend()
         list.__init__(self, [tx,ty,sx,sy])
         self.tx=tx
         self.ty=ty
@@ -279,7 +280,11 @@ class Color(list):
 
 class Glyph(list):
     def __init__(self,x,y,w,h,*props):
+        # FIXME: Should just call self.extend() here
         fl = [x,y,w,h]
+        # FIXME: Is this right?  Additional `props` have no names..
+        # Perhaps a named tuple should be used instead, if the props
+        # are known beforehand?
         fl.extend(props)
         list.__init__(self,fl)
         self.x=x
@@ -288,10 +293,13 @@ class Glyph(list):
         self.height=h
         self.props=props
 
-    def asarray(self): return np.array(self)
+    def asarray(self):
+        return np.array(self)
 
 
-############################    Support functions ####################
+# FIXME: Should these support functions be in core.py?  Which should
+# be moved into utils.py?
+############################ Support functions ####################
 class EmptyList(object):
     def __getitem__(self, idx): 
         return None
