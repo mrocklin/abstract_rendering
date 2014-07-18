@@ -22,13 +22,15 @@ except ImportError:
 _lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
 
 # ------------------------------ Core System ---------------------------------
-def glyphAggregates(points, shapeCode, val, default):
+
+
+def glyphAggregates(glyph, shapeCode, val, default):
     """Create a set of aggregates fo a single glyph. The set of aggregates will be
        tight to the bound box of the shape but may not be completely filled
        (thus the need for both 'val' and 'default').
 
-       * points -- Points that define the glyph
-       * shapeCode -- Code that indicates how to interpret the points
+       * glyph -- Points that define the glyph
+       * shapeCode -- Code that indicates how to interpret the glyph
        * val -- Value to place in bins that are hit by the shape
        * default -- Value to place in bins not hit by the shape
     """
@@ -50,14 +52,14 @@ def glyphAggregates(points, shapeCode, val, default):
     if shapeCode == glyphset.ShapeCodes.POINT:
         array = np.copy(val)  # TODO: Not sure this is always an array... verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty((points[2]-points[0], points[3]-points[1])+extShape,
+        array = np.empty((glyph[2]-glyph[0], glyph[3]-glyph[1])+extShape,
                          dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty((points[2]-points[0], points[3]-points[1])+extShape,
+        array = np.empty((glyph[2]-glyph[0], glyph[3]-glyph[1])+extShape,
                          dtype=np.int32)
         fill(array, default)
-        geometry.bressenham(array, points, val)
+        geometry.bressenham(array, glyph, val)
 
     return array
 
@@ -101,6 +103,7 @@ def project(glyphs, viewxform):
 
     return glyphset.Glyphset(out, glyphs.data(),
                              glyphset.Literals(glyphs.shaper.code))
+
 
 def aggregate(glyphs, info, aggregator, screen):
         (width, height) = screen
@@ -239,6 +242,7 @@ class PixelShader(Shader):
 
 # ------------------------------  Graphics Components ---------------
 
+
 class AffineTransform(list):
     # TODO: Consider removing AffineTransform.  With FastProject may be
     # redundant
@@ -269,6 +273,7 @@ class AffineTransform(list):
     def inverse(self):
         return AffineTransform(-self.tx/self.sx, -self.ty/self.sy, 1/self.sx, 1/self.sy)
 
+
 class Color(list):
     def __init__(self, r, g, b, a):
         list.__init__(self, [r, g, b, a])
@@ -279,6 +284,7 @@ class Color(list):
 
     def asarray(self):
         return np.array(self, dtype=np.uint8)
+
 
 class Glyph(list):
     def __init__(self, x, y, w, h, *props):
@@ -322,6 +328,7 @@ def containing(px, glyphs):
 
     return items
 
+
 def zoom_fit(screen, bounds, balanced=True):
     """What affine transform will zoom-fit the given items?
          screen: (w,h) of the viewing region
@@ -358,6 +365,7 @@ def load_csv(filename, skip, xc, yc, vc, width, height):
 
     source.close()
     return glyphset.Glyphset(glyphs, data, glyphset.Literals(glyphset.ShapeCodes.RECT))
+
 
 def main():
     # Abstract rendering function implementation modules (for demo purposes only)
