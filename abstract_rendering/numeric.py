@@ -89,7 +89,7 @@ class Cuberoot(Power):
 
 class Sqrt(core.Shader):
     def shade(self, grid):
-        return np.sqrt(grid, self.pow)
+        return np.sqrt(grid)
 
 class Spread(core.PixelShader):
     """Spreads the values out in a regular pattern.
