@@ -52,11 +52,11 @@ def glyphAggregates(glyph, shapeCode, val, default):
     if shapeCode == glyphset.ShapeCodes.POINT:
         array = np.copy(val)  # TODO: Not sure this is always an array... verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty((glyph[2]-glyph[0], glyph[3]-glyph[1])+extShape,
+        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
                          dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty((glyph[2]-glyph[0], glyph[3]-glyph[1])+extShape,
+        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
                          dtype=np.int32)
         fill(array, default)
         geometry.bressenham(array, glyph, val)
@@ -71,7 +71,7 @@ def render(glyphs, info, aggregator, shader, screen, ivt):
     Render a set of glyphs to the described canvas.
 
     * glyphs -- Glyphs to render
-    * info -- For each glyph, what is the piece of information that will be aggregated
+    * info -- For each glyph, the piece of information that will be aggregated
     * aggregator -- Combines a set of info values into a single aggregate value
     * shader -- Converts aggregates to other aggregates (often colors)
     * screen -- (width,height) of the canvas
@@ -117,8 +117,8 @@ def aggregate(glyphs, info, aggregator, screen):
         return aggregates
 
 
-# TODO: Add specialization here.  Take a 3rd argument 'specializer'; if omitted,
-# just use aggregates
+# TODO: Add specialization here.  Take a 3rd argument 'specializer';
+#       if omitted, just use aggregates
 def shade(aggregates, shader):
     """Convert a set of aggregate into another set of aggregates
        according to some data shader.  Many common cases, the result
@@ -319,6 +319,7 @@ def contains(px, glyph):
             and px.y + px.h > glyph.y
             and px.x < glyph.x + glyph.width
             and px.y < glyph.y + glyph.height)
+
 
 def containing(px, glyphs):
     items = []

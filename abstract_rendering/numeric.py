@@ -16,11 +16,11 @@ class Count(core.Aggregator):
     identity = 0
 
     def allocate(self, width, height, glyphset, infos):
-        return np.zeros((width, height), dtype=self.out_type)
+        return np.zeros((height, width), dtype=self.out_type)
 
     def combine(self, existing, glyph, shapecode, val):
         update = core.glyphAggregates(glyph, shapecode, 1, self.identity)
-        existing[glyph[0]:glyph[2], glyph[1]:glyph[3]] += update
+        existing[glyph[1]:glyph[3], glyph[0]:glyph[2]] += update
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -32,11 +32,11 @@ class Sum(core.Aggregator):
     identity = 0
 
     def allocate(self, width, height, glyphset, infos):
-        return np.zeros((width, height), dtype=self.out_type)
+        return np.zeros((height, width), dtype=self.out_type)
 
     def combine(self, existing, glyph, shapecode, val):
         update = core.glyphAggregates(glyph, shapecode, val, self.identity)
-        existing[glyph[0]:glyph[2], glyph[1]:glyph[3]] += update
+        existing[glyph[1]:glyph[3], glyph[0]:glyph[2]] += update
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -46,7 +46,7 @@ class Sum(core.Aggregator):
 class FlattenCategories(core.Shader):
     """Convert a set of category-counts into just a set of counts"""
     out_type = (1, np.int32)
-    in_type = ("A", np.int32)  # A is for "any", all cells must be the same size, but the exact size doesn't matter
+    in_type = ("A", np.int32)  # A is for "any", but all must be the same
 
     def shade(self, grid):
         return grid.sum(axis=1)
@@ -69,6 +69,7 @@ class Interpolate(core.Shader):
         self.empty = empty
 
     def shade(self, grid):
+        # TODO: Gracefully handle if the whole grid is empty
         mask = (grid == self.empty)
         min = grid[~mask].min()
         max = grid[~mask].max()
@@ -100,7 +101,8 @@ class Spread(core.PixelShader):
     """Spreads the values out in a regular pattern.
 
          TODO: Currently only does square spread.  Extend to other shapes.
-         TODO: Restricted to numbers right now...implement corresponding thing for categories...might be 'generic'
+         TODO: Restricted to numbers right now...implement corresponding thing
+               for categories...might be 'generic'
     """
 
     def __init__(self, size):
@@ -155,7 +157,11 @@ class InterpolateColors(core.Shader):
     in_type = (1, np.number)
     out_type = (4, np.int32)
 
-    def __init__(self, low, high, log=False, reserve=core.Color(255, 255, 255, 255), empty=np.nan):
+    def __init__(self,
+                 low, high,
+                 log=False,
+                 reserve=core.Color(255, 255, 255, 255),
+                 empty=np.nan):
         self.low = low
         self.high = high
         self.reserve = reserve
@@ -193,9 +199,12 @@ class InterpolateColors(core.Shader):
 
         grid[mask] = 0
 
-        colorspan = self.high.asarray().astype(np.int32) - self.low.asarray().astype(np.int32)
+        colorspan = (self.high.asarray().astype(np.int32)
+                     - self.low.asarray().astype(np.int32))
 
-        outgrid = (percents[:, :, np.newaxis] * colorspan[np.newaxis, np.newaxis, :] + self.low.asarray()).astype(np.uint8)
+        outgrid = (percents[:, :, np.newaxis]
+                   * colorspan[np.newaxis, np.newaxis, :]
+                   + self.low.asarray()).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 
@@ -206,8 +215,11 @@ class InterpolateColors(core.Shader):
         span = float(max-min)
         percents = (grid-min)/span
 
-        colorspan = self.high.asarray().astype(np.int32) - self.low.asarray().astype(np.int32)
-        outgrid = (percents[:, :, np.newaxis] * colorspan[np.newaxis, np.newaxis, :] + self.low.asarray()).astype(np.uint8)
+        colorspan = (self.high.asarray().astype(np.int32)
+                     - self.low.asarray().astype(np.int32))
+        outgrid = (percents[:, :, np.newaxis]
+                   * colorspan[np.newaxis, np.newaxis, :]
+                   + self.low.asarray()).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 

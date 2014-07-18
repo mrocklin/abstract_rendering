@@ -25,14 +25,14 @@ class CountCategories(core.Aggregator):
 
     def allocate(self, width, height, glyphset, infos):
         self.cats = np.unique(infos)
-        return np.zeros((width, height, len(self.cats)), dtype=self.out_type)
+        return np.zeros((height, width), len(self.cats)), dtype=self.out_type)
 
     def combine(self, existing, points, shapecode, val):
         entry = np.zeros(self.cats.shape[0])
         idx = np.nonzero(self.cats==val)[0][0]
         entry[idx] = 1
         update = core.glyphAggregates(points, shapecode, entry, self.identity)  
-        existing[points[0]:points[2],points[1]:points[3]] += update
+        existing[points[1]:points[3],points[0]:points[2]] += update
 
     def rollup(*vals):
         return reduce(lambda x,y: x+y,  vals)
