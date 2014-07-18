@@ -55,8 +55,8 @@ def _create_plot_component():
                         ivt)
 #      image = core.render(glyphs, 
 #                        infos.valAt(4,0),
-#                        numeric.Sum(), 
-#                        numeric.Interpolate(blue,red, empty=0),
+#                        numeric.Count(), 
+#                        numeric.AbsSegment(white, black, 1),
 #                        screen,
 #                        ivt)
 
