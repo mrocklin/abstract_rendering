@@ -1,5 +1,5 @@
 """ Core abstract rendering abstractions. This includes the main drivers of
-execution and the base clases for shared data representations. 
+execution and the base clases for shared data representations.
 """
 
 import re
@@ -11,8 +11,6 @@ from fast_project import _projectRects
 import geometry
 import glyphset
 
-
-
 try:
     from numba import autojit
 except ImportError:
@@ -23,10 +21,10 @@ except ImportError:
 # extension module, instead of directly loading a shared lib name
 _lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
 
-############################ Core System ####################
+# ------------------------------ Core System ---------------------------------
 def glyphAggregates(points, shapeCode, val, default):
     """Create a set of aggregates fo a single glyph. The set of aggregates will be
-       tight to the bound box of the shape but may not be completely filled 
+       tight to the bound box of the shape but may not be completely filled
        (thus the need for both 'val' and 'default').
 
        * points -- Points that define the glyph
@@ -35,38 +33,40 @@ def glyphAggregates(points, shapeCode, val, default):
        * default -- Value to place in bins not hit by the shape
     """
 
-    def scalar(array, val): 
+    def scalar(array, val):
         array.fill(val)
-    
+
     def nparray(array, val):
         array[:] = val
-    
+
     if type(val) == np.ndarray:
-        fill = nparray 
+        fill = nparray
         extShape = val.shape
     else:
-        fill = scalar 
+        fill = scalar
         extShape = ()
 
-    #TODO: These are selectors...rename and move this somewhere else
+    # TODO: These are selectors...rename and move this somewhere else
     if shapeCode == glyphset.ShapeCodes.POINT:
-        array = np.copy(val) ##TODO: Not sure this is always an array...should verify that
+        array = np.copy(val)  # TODO: Not sure this is always an array... verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty((points[2]-points[0],points[3]-points[1])+extShape, dtype=np.int32)
+        array = np.empty((points[2]-points[0], points[3]-points[1])+extShape,
+                         dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty((points[2]-points[0],points[3]-points[1])+extShape, dtype=np.int32)
+        array = np.empty((points[2]-points[0], points[3]-points[1])+extShape,
+                         dtype=np.int32)
         fill(array, default)
         geometry.bressenham(array, points, val)
 
     return array
 
 
-############ Core process functions #################
+# ------------------- Core process functions --------------------------------
 
-def render(glyphs, info, aggregator, shader, screen,ivt):
+def render(glyphs, info, aggregator, shader, screen, ivt):
     """
-    Render a set of glyphs under the specified condition to the described canvas.
+    Render a set of glyphs to the described canvas.
 
     * glyphs -- Glyphs to render
     * info -- For each glyph, what is the piece of information that will be aggregated
@@ -84,28 +84,28 @@ def render(glyphs, info, aggregator, shader, screen,ivt):
 def project(glyphs, viewxform):
     """Project the points found in the glyphset according to the view transform.
 
-    * viewxform -- convert canvas space to pixel space
+    * viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
     * glyphs -- set of glyphs (represented as [x,y,w,h,...]
     """
     points = glyphs.points()
     out = np.empty_like(points, dtype=np.int32)
     _projectRects(viewxform.asarray(), points, out)
-    
-    #Ensure visilibity, make sure w/h are always at least one
-    #TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
-    for i in xrange(0, out.shape[0]):
-        if out[i,0] == out[i,2]:
-            out[i,2] += 1
-        if out[i,1] == out[i,3]:
-            out[i,3] += 1
 
-    return glyphset.Glyphset(out, glyphs.data(), 
-            glyphset.Literals(glyphs.shaper.code))
+    # Ensure visilibity, make sure w/h are always at least one
+    # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
+    for i in xrange(0, out.shape[0]):
+        if out[i, 0] == out[i, 2]:
+            out[i, 2] += 1
+        if out[i, 1] == out[i, 3]:
+            out[i, 3] += 1
+
+    return glyphset.Glyphset(out, glyphs.data(),
+                             glyphset.Literals(glyphs.shaper.code))
 
 def aggregate(glyphs, info, aggregator, screen):
         (width, height) = screen
 
-        #TODO: vectorize
+        # TODO: vectorize
         infos = [info(point, data) for point, data in \
                  zip(glyphs.points(), glyphs.data())]
         aggregates = aggregator.allocate(width, height, glyphs, infos)
@@ -114,33 +114,33 @@ def aggregate(glyphs, info, aggregator, screen):
         return aggregates
 
 
-#TODO: Add specialization here.  Take a 3rd argument 'specializer'; if omitted,
+# TODO: Add specialization here.  Take a 3rd argument 'specializer'; if omitted,
 # just use aggregates
 def shade(aggregates, shader):
-     """Convert a set of aggregate into another set of aggregates
-        according to some data shader.  Many common cases, the result
-        aggregates is an image, but it does not need to be.
+    """Convert a set of aggregate into another set of aggregates
+       according to some data shader.  Many common cases, the result
+       aggregates is an image, but it does not need to be.
 
-        NOTE:  This is currently a rather simple function.  It is included now
-        as an extension point.
+       NOTE:  This is currently a rather simple function.  It is included now
+       as an extension point.
 
-        * aggregates -- input aggregaets
-        * shader -- data shader used in the conversion
-     """
-     return shader.shade(aggregates)
+       * aggregates -- input aggregaets
+       * shader -- data shader used in the conversion
+    """
+    return shader.shade(aggregates)
 
 
 class Aggregator(object):
     out_type = None
     in_type = None
-    identity=None
-    
+    identity = None
+
     def allocate(self, width, height, glyphset, infos):
         pass
 
     def combine(self, existing, points, shapecode, val):
         """
-        * existing - out_type numpy array, aggregate values for all glyphs seen thus far
+        * existing - out_type numpy array, aggregate values for all glyphs seen
         * points - points that define a shape
         * shapecode - Code that determines how points are interpreted
         * val -- Info value associated with the current set of points
@@ -156,10 +156,10 @@ class Aggregator(object):
         pass
 
 
-#TODO: Add specialization to Shaders....
+# TODO: Add specialization to Shaders....
 class Shader(object):
     def makegrid(self, grid):
-        """Create an output grid.  
+        """Create an output grid.
            Default implementation creates one of the same width/height of the input
            suitable for colors (dept 4, unit8).
         """
@@ -169,17 +169,17 @@ class Shader(object):
     def shade(self, grid):
         """Execute the actual data shader operation."""
         raise NotImplementedError
-    
-    def __add__(self, other): 
+
+    def __add__(self, other):
         """Extend this shader by executing another in sequence."""
         if (not isinstance(other, Shader)):
                 raise TypeError("Can only extend with a shader.  Received a " + str(type(other)))
-        return Seq(self, other) 
+        return Seq(self, other)
 
 
 class Seq(Shader):
     """Shader that does a sequence of other shaders."""
-         
+
     def __init__(self, *args):
         self._parts = args
 
@@ -199,7 +199,7 @@ class Seq(Shader):
 
         elif (not isinstance(other, Shader)):
             raise TypeError("Can only extend shader with another shader. Received a " + str(type(other)))
-        return Seq(list(self._parts) + other) 
+        return Seq(list(self._parts) + other)
 
 
 class PixelAggregator(Aggregator):
@@ -208,7 +208,7 @@ class PixelAggregator(Aggregator):
 
     def aggregate(self, grid):
         outgrid = np.empty_like(self._projected, dtype=np.int32)
-        #outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
+        # outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
         outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids), self._projected.flat)
 
 
@@ -218,7 +218,7 @@ class PixelShader(Shader):
     def __init__(self, pixelfunc, prefunc):
         self.pixelfunc = pixelfunc
         self.prefunc = prefunc
-    
+
     def _pre(self, grid):
         """ Executed exactly once before pixelfunc is called on any cell. """
         pass
@@ -230,23 +230,24 @@ class PixelShader(Shader):
     def shade(self, grid):
         outgrid = self.makegrid(grid)
         self._pre(grid)
-        (width,height) = grid.shape
+        (width, height) = grid.shape
         for x in xrange(0, width):
             for y in xrange(0, height):
-                outgrid[x,y] = self.pixelfunc(grid, x, y)
+                outgrid[x, y] = self.pixelfunc(grid, x, y)
 
         return outgrid
 
-###############################  Graphics Components ###############
+# ------------------------------  Graphics Components ---------------
 
 class AffineTransform(list):
+    # TODO: Consider removing AffineTransform.  With FastProject may be
+    # redundant
     def __init__(self, tx, ty, sx, sy):
-        # FIXME: This should be implemented via self.extend()
-        list.__init__(self, [tx,ty,sx,sy])
-        self.tx=tx
-        self.ty=ty
-        self.sx=sx
-        self.sy=sy
+        self.extend([tx, ty, sx, sy])
+        self.tx = tx
+        self.ty = ty
+        self.sx = sx
+        self.sy = sy
 
     def trans(self, x, y):
         """ Transform a passed point """
@@ -256,8 +257,8 @@ class AffineTransform(list):
 
     def transform(self, glyph):
         """ Transform a passed glyph (somethign with x,y,w,h) """
-        (p1x,p1y) = self.trans(glyph.x, glyph.y)
-        (p2x,p2y) = self.trans(glyph.x+glyph.width, glyph.y+glyph.height)
+        (p1x, p1y) = self.trans(glyph.x, glyph.y)
+        (p2x, p2y) = self.trans(glyph.x+glyph.width, glyph.y+glyph.height)
         w = p2x-p1x
         h = p2y-p1y
         return Glyph(p1x, p1y, w, h, glyph.props)
@@ -269,29 +270,30 @@ class AffineTransform(list):
         return AffineTransform(-self.tx/self.sx, -self.ty/self.sy, 1/self.sx, 1/self.sy)
 
 class Color(list):
-    def __init__(self,r,g,b,a):
-        list.__init__(self,[r,g,b,a])
-        self.r=r
-        self.g=g
-        self.b=b
-        self.a=a
+    def __init__(self, r, g, b, a):
+        list.__init__(self, [r, g, b, a])
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
 
-    def asarray(self): return np.array(self, dtype=np.uint8)
+    def asarray(self):
+        return np.array(self, dtype=np.uint8)
 
 class Glyph(list):
-    def __init__(self,x,y,w,h,*props):
+    def __init__(self, x, y, w, h, *props):
         # FIXME: Should just call self.extend() here
-        fl = [x,y,w,h]
+        fl = [x, y, w, h]
         # FIXME: Is this right?  Additional `props` have no names..
         # Perhaps a named tuple should be used instead, if the props
         # are known beforehand?
         fl.extend(props)
-        list.__init__(self,fl)
-        self.x=x
-        self.y=y
-        self.width=w
-        self.height=h
-        self.props=props
+        list.__init__(self, fl)
+        self.x = x
+        self.y = y
+        self.width = w
+        self.height = h
+        self.props = props
 
     def asarray(self):
         return np.array(self)
@@ -299,15 +301,16 @@ class Glyph(list):
 
 # FIXME: Should these support functions be in core.py?  Which should
 # be moved into utils.py?
-############################ Support functions ####################
+# ---------------------------- Support functions -------------------
 class EmptyList(object):
-    def __getitem__(self, idx): 
+    def __getitem__(self, idx):
         return None
 
-#Does the glyph contain any part of the pixel?
+
 def contains(px, glyph):
-    return (px.x+px.w > glyph.x     #Really is >= if using "left/top is in, right/bottom is out" convention
-            and px.y + px.h > glyph.y #Really is >= if using "left/top is in, right/bottom is out" convention
+    """Does the glyph contain any part of the pixel?"""
+    return (px.x+px.w > glyph.x
+            and px.y + px.h > glyph.y
             and px.x < glyph.x + glyph.width
             and px.y < glyph.y + glyph.height)
 
@@ -316,7 +319,7 @@ def containing(px, glyphs):
     for g in glyphs:
         if contains(px, g):
             items.append(g)
-            
+
     return items
 
 def zoom_fit(screen, bounds, balanced=True):
@@ -326,21 +329,21 @@ def zoom_fit(screen, bounds, balanced=True):
          balance: Should the x and y scales match?
          returns: AffineTransform object
     """
-    (sw,sh) = screen
-    (gx,gy,gw,gh) = bounds
+    (sw, sh) = screen
+    (gx, gy, gw, gh) = bounds
     x_scale = gw/float(sw)
     y_scale = gh/float(sh)
     if (balanced):
         x_scale = max(x_scale, y_scale)
         y_scale = x_scale
-    return AffineTransform(gx,gy,x_scale, y_scale)
+    return AffineTransform(gx, gy, x_scale, y_scale)
 
 
-def load_csv(filename, skip, xc,yc,vc,width,height):
+def load_csv(filename, skip, xc, yc, vc, width, height):
     source = open(filename, 'r')
     glyphs = []
     data = []
-    
+
     for i in range(0, skip):
         source.readline()
 
@@ -348,16 +351,16 @@ def load_csv(filename, skip, xc,yc,vc,width,height):
         line = re.split("\s*,\s*", line)
         x = float(line[xc].strip())
         y = float(line[yc].strip())
-        v = float(line[vc].strip()) if vc >=0 else 1 
-        g = Glyph(x,y,width,height)
+        v = float(line[vc].strip()) if vc >= 0 else 1
+        g = Glyph(x, y, width, height)
         glyphs.append(g)
         data.append(v)
 
     source.close()
-    return glyphset.Glyphset(glyphs,data, glyphset.Literals(glyphset.ShapeCodes.RECT))
+    return glyphset.Glyphset(glyphs, data, glyphset.Literals(glyphset.ShapeCodes.RECT))
 
 def main():
-    ##Abstract rendering function implementation modules (for demo purposes only)
+    # Abstract rendering function implementation modules (for demo purposes only)
     import numeric
     import infos
 
@@ -367,17 +370,17 @@ def main():
     yc = int(sys.argv[4])
     vc = int(sys.argv[5])
     size = float(sys.argv[6])
-    glyphs = load_csv(source,skip,xc,yc,vc,size,size)
+    glyphs = load_csv(source, skip, xc, yc, vc, size, size)
 
-    screen=(10,10)
-    ivt = zoom_fit(screen,glyphs.bounds())
+    screen = (10, 10)
+    ivt = zoom_fit(screen, glyphs.bounds())
 
-    image = render(glyphs, 
-                 infos.id(),
-                 numeric.Count(), 
-                 numeric.AbsSegment(Color(0,0,0,0), Color(255,255,255,255), .5),
-                 screen, 
-                 ivt)
+    image = render(glyphs,
+                   infos.id(),
+                   numeric.Count(),
+                   numeric.AbsSegment(Color(0, 0, 0, 0), Color(255, 255, 255, 255), .5),
+                   screen,
+                   ivt)
 
     print image
 
