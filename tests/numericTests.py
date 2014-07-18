@@ -50,13 +50,45 @@ class Count(unittest.TestCase):
 
 class Sum(unittest.TestCase):
     def test_allocate(self):
-        pass
+        op = numeric.Sum()
+        init = op.allocate(10, 10, None, None)  # Does not depend on glyphset or info
+        self.assertEquals(init.shape, (10, 10))
+        self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
     def test_combine(self):
-        pass
+        op = numeric.Sum()
+        glyph = [0, 0, 1, 1]
+
+        existing = np.ones((1, 1))
+        expected = np.empty((1, 1))
+        expected.fill(11)
+
+        op.combine(existing, glyph, ShapeCodes.POINT, 10)
+        self.assertTrue(np.array_equal(existing, expected))
+
+        existing = np.ones((1, 1))
+        expected = np.empty((1, 1))
+        expected.fill(21)
+        op.combine(existing, glyph, ShapeCodes.POINT, 20)
+        self.assertTrue(np.array_equal(existing, expected))
+
+        glyph = [5, 5, 6, 6]
+
+        existing = np.ones((10, 10))
+        expected = np.ones((10, 10))
+        expected[5, 5] = 21
+        op.combine(existing, glyph, ShapeCodes.POINT, 20)
+        self.assertTrue(np.array_equal(existing, expected),
+                        "Setting in the middle")
 
     def test_rollup(self):
-        pass
+        op = numeric.Count()
+        ones = np.ones((5, 5))
+        twos = np.empty((5, 5))
+        twos.fill(2)
+
+        result = op.rollup(ones, ones)
+        self.assertTrue(np.array_equal(result, twos))
 
 
 class FlattenCategories(unittest.TestCase):
