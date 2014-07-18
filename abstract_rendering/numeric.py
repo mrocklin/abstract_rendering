@@ -121,7 +121,7 @@ class Spread(core.PixelShader):
         return parts.sum()
 
 
-class AbsSegment(core.Shader):
+class BinarySegment(core.Shader):
     """
     Paint all pixels with aggregate value above divider one color
     and below the divider another.
