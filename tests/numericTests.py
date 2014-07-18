@@ -1,15 +1,67 @@
 import unittest
 import numpy as np
 import abstract_rendering.numeric as numeric
+from abstract_rendering.glyphset import ShapeCodes
 
-class CountTests(unittest.TestCase):
-    pass
 
-class SumTests(unittest.TestCase):
-    pass
+class Count(unittest.TestCase):
+    def test_allocate(self):
+        op = numeric.Count()
+        init = op.allocate(10, 10, None, None)  # Does not depend on glyphset or info
+        self.assertEquals(init.shape, (10, 10))
+        self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
+
+    def test_combine(self):
+        op = numeric.Count()
+        glyph = [0, 0, 1, 1]
+
+        existing = np.zeros((1, 1))
+        op.combine(existing, glyph, ShapeCodes.POINT, 10)
+        self.assertTrue(np.array_equal(existing, np.ones((1, 1))))
+
+        existing = np.zeros((1, 1))
+        op.combine(existing, glyph, ShapeCodes.POINT, 20)
+        self.assertTrue(np.array_equal(existing, np.ones((1, 1))),
+                        "Not input value invariant")
+
+        existing = np.ones((1, 1))
+        op.combine(existing, glyph, ShapeCodes.POINT, 20)
+        self.assertTrue(np.array_equal(existing, np.array([[2]])),
+                        "Count up from non-zero")
+
+        glyph = [5, 5, 6, 6]
+
+        existing = np.ones((10, 10))
+        expected = np.ones((10, 10))
+        expected[5, 5] = 2
+        op.combine(existing, glyph, ShapeCodes.POINT, 20)
+        self.assertTrue(np.array_equal(existing, expected),
+                        "Setting in the middle")
+
+    def test_rollup(self):
+        op = numeric.Count()
+        ones = np.ones((5, 5))
+        twos = np.empty((5, 5))
+        twos.fill(2)
+
+        result = op.rollup(ones, ones)
+        self.assertTrue(np.array_equal(result, twos))
+
+
+class Sum(unittest.TestCase):
+    def test_allocate(self):
+        pass
+
+    def test_combine(self):
+        pass
+
+    def test_rollup(self):
+        pass
+
 
 class FlattenCategories(unittest.TestCase):
     pass
+
 
 class Floor(unittest.TestCase):
     def test(self):
@@ -24,8 +76,10 @@ class Floor(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
+
 class Interpolate(unittest.TestCase):
     pass
+
 
 class Power(unittest.TestCase):
     def test(self):
@@ -52,10 +106,11 @@ class Cuberoot(unittest.TestCase):
         out = op.shade([1, 1, 1])
         self.assertTrue(np.array_equal(out, [1, 1, 1]))
 
-        a = np.array([[ 27],
-                      [ 64],
+        a = np.array([[27],
+                      [64],
                       [125]])
 
+        # Calculates in-place because of floating point round-off
         expected = np.array([[pow(27, 1/3.0)],
                              [pow(64, 1/3.0)],
                              [pow(125, 1/3.0)]], dtype=float)
@@ -63,6 +118,7 @@ class Cuberoot(unittest.TestCase):
         out = op.shade(a)
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
+
 
 class Sqrt(unittest.TestCase):
     def test(self):
@@ -82,13 +138,16 @@ class Sqrt(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
+
 class AbsSegment(unittest.TestCase):
     pass
+
 
 class InterpolateColors(unittest.TestCase):
     pass
 
-class SpreadTests(unittest.TestCase):
+
+class Spread(unittest.TestCase):
     def run_spread(self, spread, in_vals, expected):
         spread = numeric.Spread(spread)
         out = spread.shade(in_vals)
@@ -96,51 +155,51 @@ class SpreadTests(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected), 'incorrect value spreading')
 
     def test_spread_oneseed(self):
-        a = np.asarray([[0,0,0,0],
-                        [0,1,0,0],
-                        [0,0,0,0],
-                        [0,0,0,0]])
+        a = np.asarray([[0, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
 
-        ex = np.asarray([[0,0,0,0],
-                         [0,1,1,0],
-                         [0,1,1,0],
-                         [0,0,0,0]])
+        ex = np.asarray([[0, 0, 0, 0],
+                         [0, 1, 1, 0],
+                         [0, 1, 1, 0],
+                         [0, 0, 0, 0]])
         self.run_spread(2, a, ex)
 
     def test_spread_twoseeds(self):
-        a = np.asarray([[0,0,0,0],
-                        [0,1,1,0],
-                        [0,0,0,0],
-                        [0,0,0,0]])
+        a = np.asarray([[0, 0, 0, 0],
+                        [0, 1, 1, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
 
-        ex = np.asarray([[0,0,0,0],
-                         [0,1,2,1],
-                         [0,1,2,1],
-                         [0,0,0,0]])
+        ex = np.asarray([[0, 0, 0, 0],
+                         [0, 1, 2, 1],
+                         [0, 1, 2, 1],
+                         [0, 0, 0, 0]])
         self.run_spread(2, a, ex)
 
     def test_spread_three(self):
-        a = np.asarray([[0,0,0,0],
-                        [0,1,0,0],
-                        [0,0,0,0],
-                        [0,0,0,0]])
+        a = np.asarray([[0, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
 
-        ex = np.asarray([[1,1,1,0],
-                         [1,1,1,0],
-                         [1,1,1,0],
-                         [0,0,0,0]])
+        ex = np.asarray([[1, 1, 1, 0],
+                         [1, 1, 1, 0],
+                         [1, 1, 1, 0],
+                         [0, 0, 0, 0]])
         self.run_spread(3, a, ex)
 
     def spread_zero(self):
-        a = np.asarray([[0,0,0,0],
-                        [0,1,0,0],
-                        [0,0,0,0],
-                        [0,0,0,0]])
-        
-        ex = np.asarray([[0,0,0,0],
-                         [0,1,0,0],
-                         [0,0,0,0],
-                         [0,0,0,0]])
+        a = np.asarray([[0, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
+
+        ex = np.asarray([[0, 0, 0, 0],
+                         [0, 1, 0, 0],
+                         [0, 0, 0, 0],
+                         [0, 0, 0, 0]])
         self.run_spread(0, a, ex)
 
 

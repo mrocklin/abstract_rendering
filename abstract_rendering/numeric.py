@@ -18,12 +18,13 @@ class Count(core.Aggregator):
     def allocate(self, width, height, glyphset, infos):
         return np.zeros((width, height), dtype=self.out_type)
 
-    def combine(self, existing, points, shapecode, val):
-        update = core.glyphAggregates(points, shapecode, 1, self.identity)
-        existing[points[0]:points[2], points[1]:points[3]] += update
+    def combine(self, existing, glyph, shapecode, val):
+        update = core.glyphAggregates(glyph, shapecode, 1, self.identity)
+        existing[glyph[0]:glyph[2], glyph[1]:glyph[3]] += update
 
-    def rollup(*vals):
+    def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
+
 
 class Sum(core.Aggregator):
     """Count the number of items that fall into a particular grid element."""
@@ -33,11 +34,11 @@ class Sum(core.Aggregator):
     def allocate(self, width, height, glyphset, infos):
         return np.zeros((width, height), dtype=self.out_type)
 
-    def combine(self, existing, points, shapecode, val):
-        update = core.glyphAggregates(points, shapecode, val, self.identity)
-        existing[points[0]:points[2], points[1]:points[3]] += update
+    def combine(self, existing, glyph, shapecode, val):
+        update = core.glyphAggregates(glyph, shapecode, val, self.identity)
+        existing[glyph[0]:glyph[2], glyph[1]:glyph[3]] += update
 
-    def rollup(*vals):
+    def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
 
 
@@ -54,6 +55,7 @@ class FlattenCategories(core.Shader):
 class Floor(core.Shader):
     def shade(self, grid):
         return np.floor(grid)
+
 
 class Interpolate(core.Shader):
     """Interpolate between two numbers.
@@ -74,6 +76,7 @@ class Interpolate(core.Shader):
         percents = (grid-min)/span
         return percents * (self.high-self.low)
 
+
 class Power(core.Shader):
     """Raise to a power.    Power may be fracional."""
     def __init__(self, pow):
@@ -87,9 +90,11 @@ class Cuberoot(Power):
     def __init__(self):
         super(Cuberoot, self).__init__(1/3.0)
 
+
 class Sqrt(core.Shader):
     def shade(self, grid):
         return np.sqrt(grid)
+
 
 class Spread(core.PixelShader):
     """Spreads the values out in a regular pattern.
@@ -113,6 +118,7 @@ class Spread(core.PixelShader):
         parts = grid[minx:maxx, miny:maxy]
         return parts.sum()
 
+
 class AbsSegment(core.Shader):
     """
     Paint all pixels with aggregate value above divider one color
@@ -133,6 +139,7 @@ class AbsSegment(core.Shader):
         outgrid[mask] = self.high
         outgrid[~mask] = self.low
         return outgrid
+
 
 class InterpolateColors(core.Shader):
     """
