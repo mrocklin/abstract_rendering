@@ -29,8 +29,17 @@ class Count(unittest.TestCase):
         self.assertTrue(np.array_equal(existing, np.array([[2]])),
                         "Count up from non-zero")
 
-        glyph = [5, 5, 6, 6]
 
+
+        glyph = [1, 2, 2, 3]
+        existing = np.ones((3,1))
+        expected = np.array([[1, 1, 1, 1],
+                             [1, 1, 1, 1],
+                             [1, 2, 1, 1]])
+        op.combine(existing, glyph, ShapeCodes.POINT, 3)
+
+
+        glyph = [5, 5, 6, 6]
         existing = np.ones((10, 10))
         expected = np.ones((10, 10))
         expected[5, 5] = 2
@@ -72,8 +81,15 @@ class Sum(unittest.TestCase):
         op.combine(existing, glyph, ShapeCodes.POINT, 20)
         self.assertTrue(np.array_equal(existing, expected))
 
-        glyph = [5, 5, 6, 6]
 
+        glyph = [1, 2, 2, 3]
+        existing = np.ones((3,1))
+        expected = np.array([[1, 1, 1, 1],
+                             [1, 1, 1, 1],
+                             [1, 4, 1, 1]])
+        op.combine(existing, glyph, ShapeCodes.POINT, 3)
+
+        glyph = [5, 5, 6, 6]
         existing = np.ones((10, 10))
         expected = np.ones((10, 10))
         expected[5, 5] = 21
