@@ -25,7 +25,7 @@ class CountCategories(core.Aggregator):
 
     def allocate(self, width, height, glyphset, infos):
         self.cats = np.unique(infos)
-        return np.zeros((height, width), len(self.cats)), dtype=self.out_type)
+        return np.zeros((len(self.cats), height, width), dtype=self.out_type)
 
     def combine(self, existing, points, shapecode, val):
         entry = np.zeros(self.cats.shape[0])

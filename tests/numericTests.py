@@ -1,13 +1,16 @@
+from __future__ import print_function
+
 import unittest
 import numpy as np
 import abstract_rendering.numeric as numeric
+import abstract_rendering.core as core
 from abstract_rendering.glyphset import ShapeCodes
 
 
 class Count(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Count()
-        init = op.allocate(10, 10, None, None)  # Does not depend on glyphset or info
+        init = op.allocate(10, 10, None, None)
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
@@ -29,15 +32,12 @@ class Count(unittest.TestCase):
         self.assertTrue(np.array_equal(existing, np.array([[2]])),
                         "Count up from non-zero")
 
-
-
         glyph = [1, 2, 2, 3]
-        existing = np.ones((3,1))
+        existing = np.ones((3, 1))
         expected = np.array([[1, 1, 1, 1],
                              [1, 1, 1, 1],
                              [1, 2, 1, 1]])
         op.combine(existing, glyph, ShapeCodes.POINT, 3)
-
 
         glyph = [5, 5, 6, 6]
         existing = np.ones((10, 10))
@@ -60,7 +60,7 @@ class Count(unittest.TestCase):
 class Sum(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Sum()
-        init = op.allocate(10, 10, None, None)  # Does not depend on glyphset or info
+        init = op.allocate(10, 10, None, None)
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
@@ -81,9 +81,8 @@ class Sum(unittest.TestCase):
         op.combine(existing, glyph, ShapeCodes.POINT, 20)
         self.assertTrue(np.array_equal(existing, expected))
 
-
         glyph = [1, 2, 2, 3]
-        existing = np.ones((3,1))
+        existing = np.ones((3, 1))
         expected = np.array([[1, 1, 1, 1],
                              [1, 1, 1, 1],
                              [1, 4, 1, 1]])
@@ -108,7 +107,32 @@ class Sum(unittest.TestCase):
 
 
 class FlattenCategories(unittest.TestCase):
-    pass
+    def test(self):
+        """Can the output of categories.CountCategories can be
+        transformed to vanilla counts?"""
+
+        import abstract_rendering.categories
+        import operator
+
+        categories = abstract_rendering.categories.CountCategories()
+        op = numeric.FlattenCategories()
+
+        aggs = categories.allocate(4, 5, None, [1, 2, 3])
+        aggs.fill(1)
+        out = op.shade(aggs)
+        expected = np.empty((5, 4), dtype=np.int32)
+        expected.fill(3.0)
+        self.assertTrue(np.array_equal(out, expected))
+
+        shape = aggs.shape
+        aggs = np.arange(0, reduce(operator.mul, shape))
+        aggs = aggs.reshape(shape)
+        out = op.shade(aggs)
+
+        self.assertEquals(out[0, 0], 0+20+40)
+        self.assertEquals(out[4, 0], 16+36+56)
+        self.assertEquals(out[0, 3], 3+23+43)
+        self.assertEquals(out[4, 3], 19+39+59)
 
 
 class Floor(unittest.TestCase):
@@ -126,7 +150,22 @@ class Floor(unittest.TestCase):
 
 
 class Interpolate(unittest.TestCase):
-    pass
+    def _run_test(self, low, high, msg):
+        op = numeric.Interpolate(low, high)
+        (width, height) = (5, 10)
+        aggs = np.arange(0, width*height).reshape(height, width)
+        out = op.shade(aggs)
+        expected = np.linspace(low, high, width*height).reshape(height, width)
+        self.assertTrue(np.allclose(out, expected), msg)
+
+    def test_0to1(self):
+        self._run_test(0, 1, "Zero to One")
+
+    def test_0to10(self):
+        self._run_test(0, 10, "Zero to Ten")
+
+    def test_1to11(self):
+        self._run_test(1, 11, "One to Eleven")
 
 
 class Power(unittest.TestCase):
@@ -187,12 +226,41 @@ class Sqrt(unittest.TestCase):
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
 
-class AbsSegment(unittest.TestCase):
-    pass
+class BinarySegment(unittest.TestCase):
+    def test(self):
+        w = core.Color(255, 255, 255, 255)
+        b = core.Color(0, 0, 0, 255)
+        op = numeric.BinarySegment(b, w, 5)
+        aggs = np.array([[0, 0, 0, 0, 0],
+                         [1, 1, 1, 1, 1],
+                         [5, 5, 5, 5, 5],
+                         [6, 6, 6, 6, 6],
+                         [9, 9, 9, 9, 9],
+                         [0, 1, 5, 6, -1]])
+        out = op.shade(aggs)
+        expected = np.array([[b, b, b, b, b],
+                             [b, b, b, b, b],
+                             [w, w, w, w, w],
+                             [w, w, w, w, w],
+                             [w, w, w, w, w],
+                             [b, b, w, w, b]])
+        self.assertTrue(np.array_equal(out, expected))
 
 
 class InterpolateColors(unittest.TestCase):
-    pass
+    def test_linear(self):
+        red = core.Color(255, 0, 0, 255)
+        white = core.Color(255, 255, 255, 255)
+
+        op = numeric.InterpolateColors(white, red)
+        aggs = np.arange(0, 256).reshape((32, 8))
+        out = op.shade(aggs)
+
+        var = np.arange(0, 256)[::-1].reshape((32, 8))
+        const = np.empty((32, 8), dtype=np.int)
+        const.fill(255)
+        expected = np.dstack((const, var, var, const))
+        self.assertTrue(np.array_equal(out, expected))
 
 
 class Spread(unittest.TestCase):
@@ -200,7 +268,8 @@ class Spread(unittest.TestCase):
         spread = numeric.Spread(spread)
         out = spread.shade(in_vals)
 
-        self.assertTrue(np.array_equal(out, expected), 'incorrect value spreading')
+        self.assertTrue(np.array_equal(out, expected),
+                        'incorrect value spreading')
 
     def test_spread_oneseed(self):
         a = np.asarray([[0, 0, 0, 0],

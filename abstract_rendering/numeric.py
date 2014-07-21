@@ -49,7 +49,7 @@ class FlattenCategories(core.Shader):
     in_type = ("A", np.int32)  # A is for "any", but all must be the same
 
     def shade(self, grid):
-        return grid.sum(axis=1)
+        return grid.sum(axis=0)
 
 
 class Floor(core.Shader):
@@ -75,7 +75,7 @@ class Interpolate(core.Shader):
         max = grid[~mask].max()
         span = float(max-min)
         percents = (grid-min)/span
-        return percents * (self.high-self.low)
+        return self.low +(percents * (self.high-self.low))
 
 
 class Power(core.Shader):
@@ -125,6 +125,8 @@ class BinarySegment(core.Shader):
     """
     Paint all pixels with aggregate value above divider one color
     and below the divider another.
+
+    TODO: Extend so out can be something other than colors
     """
     in_type = (1, np.number)
     out_type = (4, np.int32)
@@ -147,6 +149,8 @@ class InterpolateColors(core.Shader):
     """
     High-definition interpolation between two colors.
     Zero-values are treated separately from other values.
+
+    TODO: Remove log, just provide a generic log operator to pre-transform the values
 
     * low -- Color ot use for lowest value
     * high -- Color to use for highest values
