@@ -43,15 +43,6 @@ class Sum(core.Aggregator):
 
 
 # -------------- Shaders -----------------
-class FlattenCategories(core.Shader):
-    """Convert a set of category-counts into just a set of counts"""
-    out_type = (1, np.int32)
-    in_type = ("A", np.int32)  # A is for "any", but all must be the same
-
-    def shade(self, grid):
-        return grid.sum(axis=0)
-
-
 class Floor(core.Shader):
     def shade(self, grid):
         return np.floor(grid)
@@ -75,7 +66,7 @@ class Interpolate(core.Shader):
         max = grid[~mask].max()
         span = float(max-min)
         percents = (grid-min)/span
-        return self.low +(percents * (self.high-self.low))
+        return self.low + (percents * (self.high-self.low))
 
 
 class Power(core.Shader):
@@ -150,7 +141,7 @@ class InterpolateColors(core.Shader):
     High-definition interpolation between two colors.
     Zero-values are treated separately from other values.
 
-    TODO: Remove log, just provide a generic log operator to pre-transform the values
+    TODO: Remove log, just provide a shader to pre-transform the values
 
     * low -- Color ot use for lowest value
     * high -- Color to use for highest values

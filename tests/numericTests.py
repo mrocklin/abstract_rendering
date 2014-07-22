@@ -10,14 +10,15 @@ from abstract_rendering.glyphset import ShapeCodes
 class Count(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Count()
+
         init = op.allocate(10, 10, None, None)
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
     def test_combine(self):
         op = numeric.Count()
-        glyph = [0, 0, 1, 1]
 
+        glyph = [0, 0, 1, 1]
         existing = np.zeros((1, 1))
         op.combine(existing, glyph, ShapeCodes.POINT, 10)
         self.assertTrue(np.array_equal(existing, np.ones((1, 1))))
@@ -49,6 +50,7 @@ class Count(unittest.TestCase):
 
     def test_rollup(self):
         op = numeric.Count()
+
         ones = np.ones((5, 5))
         twos = np.empty((5, 5))
         twos.fill(2)
@@ -60,14 +62,15 @@ class Count(unittest.TestCase):
 class Sum(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Sum()
+
         init = op.allocate(10, 10, None, None)
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
     def test_combine(self):
         op = numeric.Sum()
-        glyph = [0, 0, 1, 1]
 
+        glyph = [0, 0, 1, 1]
         existing = np.ones((1, 1))
         expected = np.empty((1, 1))
         expected.fill(11)
@@ -98,6 +101,7 @@ class Sum(unittest.TestCase):
 
     def test_rollup(self):
         op = numeric.Count()
+
         ones = np.ones((5, 5))
         twos = np.empty((5, 5))
         twos.fill(2)
@@ -106,38 +110,10 @@ class Sum(unittest.TestCase):
         self.assertTrue(np.array_equal(result, twos))
 
 
-class FlattenCategories(unittest.TestCase):
-    def test(self):
-        """Can the output of categories.CountCategories can be
-        transformed to vanilla counts?"""
-
-        import abstract_rendering.categories
-        import operator
-
-        categories = abstract_rendering.categories.CountCategories()
-        op = numeric.FlattenCategories()
-
-        aggs = categories.allocate(4, 5, None, [1, 2, 3])
-        aggs.fill(1)
-        out = op.shade(aggs)
-        expected = np.empty((5, 4), dtype=np.int32)
-        expected.fill(3.0)
-        self.assertTrue(np.array_equal(out, expected))
-
-        shape = aggs.shape
-        aggs = np.arange(0, reduce(operator.mul, shape))
-        aggs = aggs.reshape(shape)
-        out = op.shade(aggs)
-
-        self.assertEquals(out[0, 0], 0+20+40)
-        self.assertEquals(out[4, 0], 16+36+56)
-        self.assertEquals(out[0, 3], 3+23+43)
-        self.assertEquals(out[4, 3], 19+39+59)
-
-
 class Floor(unittest.TestCase):
     def test(self):
         op = numeric.Floor()
+
         a = np.array([[1.1, 1.5, 1.9],
                       [2.3, 0, 0.1]])
 
@@ -152,6 +128,7 @@ class Floor(unittest.TestCase):
 class Interpolate(unittest.TestCase):
     def _run_test(self, low, high, msg):
         op = numeric.Interpolate(low, high)
+
         (width, height) = (5, 10)
         aggs = np.arange(0, width*height).reshape(height, width)
         out = op.shade(aggs)
@@ -171,6 +148,7 @@ class Interpolate(unittest.TestCase):
 class Power(unittest.TestCase):
     def test(self):
         op = numeric.Power(2)
+
         out = op.shade([0, 0, 0])
         self.assertTrue(np.array_equal(out, [0, 0, 0]))
 
@@ -190,6 +168,7 @@ class Power(unittest.TestCase):
 class Cuberoot(unittest.TestCase):
     def test(self):
         op = numeric.Cuberoot()
+
         out = op.shade([1, 1, 1])
         self.assertTrue(np.array_equal(out, [1, 1, 1]))
 
@@ -210,6 +189,7 @@ class Cuberoot(unittest.TestCase):
 class Sqrt(unittest.TestCase):
     def test(self):
         op = numeric.Sqrt()
+
         out = op.shade([1, 1, 1])
         self.assertTrue(np.array_equal(out, [1, 1, 1]))
 
@@ -231,6 +211,7 @@ class BinarySegment(unittest.TestCase):
         w = core.Color(255, 255, 255, 255)
         b = core.Color(0, 0, 0, 255)
         op = numeric.BinarySegment(b, w, 5)
+
         aggs = np.array([[0, 0, 0, 0, 0],
                          [1, 1, 1, 1, 1],
                          [5, 5, 5, 5, 5],
@@ -251,8 +232,8 @@ class InterpolateColors(unittest.TestCase):
     def test_linear(self):
         red = core.Color(255, 0, 0, 255)
         white = core.Color(255, 255, 255, 255)
-
         op = numeric.InterpolateColors(white, red)
+
         aggs = np.arange(0, 256).reshape((32, 8))
         out = op.shade(aggs)
 
@@ -265,8 +246,8 @@ class InterpolateColors(unittest.TestCase):
 
 class Spread(unittest.TestCase):
     def run_spread(self, spread, in_vals, expected):
-        spread = numeric.Spread(spread)
-        out = spread.shade(in_vals)
+        op = numeric.Spread(spread)
+        out = op.shade(in_vals)
 
         self.assertTrue(np.array_equal(out, expected),
                         'incorrect value spreading')

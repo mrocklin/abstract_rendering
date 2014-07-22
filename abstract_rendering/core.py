@@ -43,7 +43,7 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
     if type(val) == np.ndarray:
         fill = nparray
-        extShape = val.shape
+        extShape = (val.shape[0],)
     else:
         fill = scalar
         extShape = ()
@@ -52,11 +52,10 @@ def glyphAggregates(glyph, shapeCode, val, default):
     if shapeCode == glyphset.ShapeCodes.POINT:
         array = np.copy(val)  # TODO: Not sure this is always an array... verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
-                         dtype=np.int32)
+        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]), dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
+        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]),
                          dtype=np.int32)
         fill(array, default)
         geometry.bressenham(array, glyph, val)
@@ -139,6 +138,17 @@ class Aggregator(object):
     identity = None
 
     def allocate(self, width, height, glyphset, infos):
+        """ 
+        Create an array suitable for processing the passed dataset
+        into the requested grid size.  
+
+        * width - The width of the bin grid
+        * height - The height of the bin grid
+        * glyphset - The points that will be processed
+        * infos - The info values that accompany the glyphset 
+
+        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
+        """
         pass
 
     def combine(self, existing, points, shapecode, val):
