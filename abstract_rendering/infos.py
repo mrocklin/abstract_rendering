@@ -32,11 +32,14 @@ def valAt(i, default=None):
             return default
     return f 
 
-def attribute(att, default=None):
-    """"Return the value under a given attribute in the data part of hte input."""
+def key(att, default=None):
+    "Return the value under a given key in the data part of the input."
     def f(glyph, data):
-        try :
-            return getattr(data, att)
-        except:
-            return default
+        return data.get(att, default)
+    return f 
+
+def attribute(att, default=None):
+    "Return the value under a given attribute in the data part of the input."
+    def f(glyph, data):
+        return getattr(data, att, default)
     return f 

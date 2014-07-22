@@ -204,7 +204,7 @@ class HDAlpha(unittest.TestCase):
         aggs = np.array([[[1, 0, 0]],
                          [[1, 1, 0]],
                          [[0, 1, 1]]])
-        
+
         expected = np.array([[[127, 127,   0, 255],
                               [  0, 127, 127, 255],
                               [  0,   0, 255, 127]]], dtype=np.uint8)
