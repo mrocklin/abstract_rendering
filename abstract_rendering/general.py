@@ -1,3 +1,7 @@
+"""
+Operations that apply across a broad variety of categories.
+"""
+
 import core
 
 class Id(core.Shader):
