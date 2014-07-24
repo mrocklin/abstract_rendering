@@ -11,16 +11,6 @@ from fast_project import _projectRects
 import geometry
 import glyphset
 
-try:
-    from numba import autojit
-except ImportError:
-    print "Error loading numba."
-    autojit = lambda f: f
-
-# FIXME: This should attempt a relative import of the transform
-# extension module, instead of directly loading a shared lib name
-_lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
-
 # ------------------------------ Core System ---------------------------------
 
 
@@ -50,9 +40,10 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
     # TODO: These are selectors...rename and move this somewhere else
     if shapeCode == glyphset.ShapeCodes.POINT:
-        array = np.copy(val)  # TODO: Not sure this is always an array... verify
+        array = np.copy(val)  # TODO: Not sure this is always an array...verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]), dtype=np.int32)
+        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]),
+                         dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
         array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]),
@@ -74,9 +65,9 @@ def render(glyphs, info, aggregator, shader, screen, ivt):
     * aggregator -- Combines a set of info values into a single aggregate value
     * shader -- Converts aggregates to other aggregates (often colors)
     * screen -- (width,height) of the canvas
-    * ivt -- INVERSE view transform (converts pixels to canvas space)
+    * ivt -- View transform (converts canvas to pixels)
     """
-    projected = project(glyphs, ivt.inverse())
+    projected = project(glyphs, ivt)
     aggregates = aggregate(projected, info, aggregator, screen)
     shaded = shade(aggregates, shader)
     return shaded
@@ -90,7 +81,7 @@ def project(glyphs, viewxform):
     """
     points = glyphs.points()
     out = np.empty_like(points, dtype=np.int32)
-    _projectRects(viewxform.asarray(), points, out)
+    _projectRects(viewxform, points, out)
 
     # Ensure visilibity, make sure w/h are always at least one
     # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
@@ -108,8 +99,9 @@ def aggregate(glyphs, info, aggregator, screen):
         (width, height) = screen
 
         # TODO: vectorize
-        infos = [info(point, data) for point, data in \
-                 zip(glyphs.points(), glyphs.data())]
+        infos = [info(point, data)
+                 for point, data
+                 in zip(glyphs.points(), glyphs.data())]
         aggregates = aggregator.allocate(width, height, glyphs, infos)
         for idx, points in enumerate(glyphs.points()):
             aggregator.combine(aggregates, points, glyphs.shaper.code, infos[idx])
@@ -138,14 +130,14 @@ class Aggregator(object):
     identity = None
 
     def allocate(self, width, height, glyphset, infos):
-        """ 
+        """
         Create an array suitable for processing the passed dataset
-        into the requested grid size.  
+        into the requested grid size.
 
         * width - The width of the bin grid
         * height - The height of the bin grid
         * glyphset - The points that will be processed
-        * infos - The info values that accompany the glyphset 
+        * infos - The info values that accompany the glyphset
 
         TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
         """
@@ -173,8 +165,9 @@ class Aggregator(object):
 class Shader(object):
     def makegrid(self, grid):
         """Create an output grid.
-           Default implementation creates one of the same width/height of the input
-           suitable for colors (dept 4, unit8).
+
+           Default implementation creates one of the same width/height
+           of the input suitable for colors (dept 4, unit8).
         """
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
@@ -222,22 +215,23 @@ class PixelAggregator(Aggregator):
     def aggregate(self, grid):
         outgrid = np.empty_like(self._projected, dtype=np.int32)
         # outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
-        outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids), self._projected.flat)
+        outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids),
+                                 self._projected.flat)
 
 
 class PixelShader(Shader):
-    """ Data shader that does non-vectorized per-pixel shading. """
+    "Data shader that does non-vectorized per-pixel shading."
 
     def __init__(self, pixelfunc, prefunc):
         self.pixelfunc = pixelfunc
         self.prefunc = prefunc
 
     def _pre(self, grid):
-        """ Executed exactly once before pixelfunc is called on any cell. """
+        "Executed exactly once before pixelfunc is called on any cell. "
         pass
 
     def pixelfunc(grid, x, y):
-        """Override this method. It will be called for each pixel in the grid."""
+        "Override this method. It will be called for each pixel in the grid."
         raise NotImplementedError
 
     def shade(self, grid):
@@ -250,40 +244,8 @@ class PixelShader(Shader):
 
         return outgrid
 
+
 # ------------------------------  Graphics Components ---------------
-
-
-class AffineTransform(list):
-    # TODO: Consider removing AffineTransform.  With FastProject may be
-    # redundant
-    def __init__(self, tx, ty, sx, sy):
-        self.extend([tx, ty, sx, sy])
-        self.tx = tx
-        self.ty = ty
-        self.sx = sx
-        self.sy = sy
-
-    def trans(self, x, y):
-        """ Transform a passed point """
-        x = self.sx * x + self.tx
-        y = self.sy * y + self.ty
-        return (x, y)
-
-    def transform(self, glyph):
-        """ Transform a passed glyph (somethign with x,y,w,h) """
-        (p1x, p1y) = self.trans(glyph.x, glyph.y)
-        (p2x, p2y) = self.trans(glyph.x+glyph.width, glyph.y+glyph.height)
-        w = p2x-p1x
-        h = p2y-p1y
-        return Glyph(p1x, p1y, w, h, glyph.props)
-
-    def asarray(self):
-        return np.array(self)
-
-    def inverse(self):
-        return AffineTransform(-self.tx/self.sx, -self.ty/self.sy, 1/self.sx, 1/self.sy)
-
-
 class Color(list):
     def __init__(self, r, g, b, a):
         list.__init__(self, [r, g, b, a])
@@ -296,56 +258,12 @@ class Color(list):
         return np.array(self, dtype=np.uint8)
 
 
-class Glyph(list):
-    def __init__(self, x, y, w, h, *props):
-        # FIXME: Should just call self.extend() here
-        fl = [x, y, w, h]
-        # FIXME: Is this right?  Additional `props` have no names..
-        # Perhaps a named tuple should be used instead, if the props
-        # are known beforehand?
-        fl.extend(props)
-        list.__init__(self, fl)
-        self.x = x
-        self.y = y
-        self.width = w
-        self.height = h
-        self.props = props
-
-    def asarray(self):
-        return np.array(self)
-
-
-# FIXME: Should these support functions be in core.py?  Which should
-# be moved into utils.py?
-# ---------------------------- Support functions -------------------
-class EmptyList(object):
-    def __getitem__(self, idx):
-        return None
-
-
-def contains(px, glyph):
-    """Does the glyph contain any part of the pixel?"""
-    return (px.x+px.w > glyph.x
-            and px.y + px.h > glyph.y
-            and px.x < glyph.x + glyph.width
-            and px.y < glyph.y + glyph.height)
-
-
-def containing(px, glyphs):
-    items = []
-    for g in glyphs:
-        if contains(px, g):
-            items.append(g)
-
-    return items
-
-
 def zoom_fit(screen, bounds, balanced=True):
     """What affine transform will zoom-fit the given items?
          screen: (w,h) of the viewing region
          bounds: (x,y,w,h) of the items to fit
          balance: Should the x and y scales match?
-         returns: AffineTransform object
+         returns: [translate x, translate y, scale x, scale y]
     """
     (sw, sh) = screen
     (gx, gy, gw, gh) = bounds
@@ -354,9 +272,10 @@ def zoom_fit(screen, bounds, balanced=True):
     if (balanced):
         x_scale = max(x_scale, y_scale)
         y_scale = x_scale
-    return AffineTransform(gx, gy, x_scale, y_scale)
+    return [-gx/x_scale, -gy/y_scale, 1/x_scale, 1/y_scale]
 
 
+# ---------------------- Demo Utilities ---------------------------
 def load_csv(filename, skip, xc, yc, vc, width, height):
     source = open(filename, 'r')
     glyphs = []
@@ -370,12 +289,13 @@ def load_csv(filename, skip, xc, yc, vc, width, height):
         x = float(line[xc].strip())
         y = float(line[yc].strip())
         v = float(line[vc].strip()) if vc >= 0 else 1
-        g = Glyph(x, y, width, height)
+        g = [x, y, width, height]
         glyphs.append(g)
         data.append(v)
 
     source.close()
-    return glyphset.Glyphset(glyphs, data, glyphset.Literals(glyphset.ShapeCodes.RECT))
+    return glyphset.Glyphset(glyphs, data,
+                             glyphset.Literals(glyphset.ShapeCodes.RECT))
 
 
 def main():
@@ -397,7 +317,9 @@ def main():
     image = render(glyphs,
                    infos.id(),
                    numeric.Count(),
-                   numeric.AbsSegment(Color(0, 0, 0, 0), Color(255, 255, 255, 255), .5),
+                   numeric.AbsSegment(Color(0, 0, 0, 0),
+                                      Color(255, 255, 255, 255),
+                                      .5),
                    screen,
                    ivt)
 
