@@ -2,16 +2,120 @@
 execution and the base clases for shared data representations.
 """
 
-import re
-import sys
-import os
 import numpy as np
-import ctypes
 from fast_project import _projectRects
 import geometry
 import glyphset
 
-# ------------------------------ Core System ---------------------------------
+
+# ------------------- Core process functions --------------------------------
+def render(glyphs, info, aggregator, shader, screen, vt):
+    """
+    Render a set of glyphs to the described canvas.
+
+    * glyphs -- Glyphs to render
+    * info -- For each glyph, the piece of information that will be aggregated
+    * aggregator -- Combines a set of info values into a single aggregate value
+    * shader -- Converts aggregates to other aggregates (often colors)
+    * screen -- (width,height) of the canvas
+    * vt -- View transform (converts canvas to pixels)
+    """
+    projected = project(glyphs, vt)
+    aggregates = aggregate(projected, info, aggregator, screen)
+    shaded = shade(aggregates, shader)
+    return shaded
+
+
+def project(glyphs, viewxform):
+    """Project the points found in the glyphset according to the view transform.
+
+    * viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
+    * glyphs -- set of glyphs (represented as [x,y,w,h,...]
+    """
+    points = glyphs.points()
+    out = np.empty_like(points, dtype=np.int32)
+    _projectRects(viewxform, points, out)
+
+    # Ensure visilibity, make sure w/h are always at least one
+    # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
+    for i in xrange(0, out.shape[0]):
+        if out[i, 0] == out[i, 2]:
+            out[i, 2] += 1
+        if out[i, 1] == out[i, 3]:
+            out[i, 3] += 1
+
+    return glyphset.Glyphset(out, glyphs.data(),
+                             glyphset.Literals(glyphs.shaper.code))
+
+
+def aggregate(glyphs, info, aggregator, screen):
+        (width, height) = screen
+
+        # TODO: vectorize
+        infos = [info(point, data)
+                 for point, data
+                 in zip(glyphs.points(), glyphs.data())]
+        aggregates = aggregator.allocate(width, height, glyphs, infos)
+        for idx, points in enumerate(glyphs.points()):
+            aggregator.combine(aggregates,
+                               points,
+                               glyphs.shaper.code,
+                               infos[idx])
+        return aggregates
+
+
+# TODO: Add specialization here.  Take a 3rd argument 'specializer';
+#       if omitted, just use aggregates
+def shade(aggregates, shader):
+    """Convert a set of aggregate into another set of aggregates
+       according to some data shader.  Many common cases, the result
+       aggregates is an image, but it does not need to be.
+
+       NOTE:  This is currently a rather simple function.  It is included now
+       as an extension point.
+
+       * aggregates -- input aggregaets
+       * shader -- data shader used in the conversion
+    """
+    return shader.shade(aggregates)
+
+
+# -------------------------  Aggregators and related utilities ----------------
+class Aggregator(object):
+    out_type = None
+    in_type = None
+    identity = None
+
+    def allocate(self, width, height, glyphset, infos):
+        """
+        Create an array suitable for processing the passed dataset
+        into the requested grid size.
+
+        * width - The width of the bin grid
+        * height - The height of the bin grid
+        * glyphset - The points that will be processed
+        * infos - The info values that accompany the glyphset
+
+        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
+        """
+        pass
+
+    def combine(self, existing, points, shapecode, val):
+        """
+        * existing - out_type numpy array, aggregate values for all glyphs seen
+        * points - points that define a shape
+        * shapecode - Code that determines how points are interpreted
+        * val -- Info value associated with the current set of points
+        """
+        pass
+
+    def rollup(*vals):
+        """
+        Combine multiple sets of aggregates.
+
+        * vals - list of numpy arrays with type out_type
+        """
+        pass
 
 
 def glyphAggregates(glyph, shapeCode, val, default):
@@ -54,113 +158,7 @@ def glyphAggregates(glyph, shapeCode, val, default):
     return array
 
 
-# ------------------- Core process functions --------------------------------
-
-def render(glyphs, info, aggregator, shader, screen, ivt):
-    """
-    Render a set of glyphs to the described canvas.
-
-    * glyphs -- Glyphs to render
-    * info -- For each glyph, the piece of information that will be aggregated
-    * aggregator -- Combines a set of info values into a single aggregate value
-    * shader -- Converts aggregates to other aggregates (often colors)
-    * screen -- (width,height) of the canvas
-    * ivt -- View transform (converts canvas to pixels)
-    """
-    projected = project(glyphs, ivt)
-    aggregates = aggregate(projected, info, aggregator, screen)
-    shaded = shade(aggregates, shader)
-    return shaded
-
-
-def project(glyphs, viewxform):
-    """Project the points found in the glyphset according to the view transform.
-
-    * viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
-    * glyphs -- set of glyphs (represented as [x,y,w,h,...]
-    """
-    points = glyphs.points()
-    out = np.empty_like(points, dtype=np.int32)
-    _projectRects(viewxform, points, out)
-
-    # Ensure visilibity, make sure w/h are always at least one
-    # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
-    for i in xrange(0, out.shape[0]):
-        if out[i, 0] == out[i, 2]:
-            out[i, 2] += 1
-        if out[i, 1] == out[i, 3]:
-            out[i, 3] += 1
-
-    return glyphset.Glyphset(out, glyphs.data(),
-                             glyphset.Literals(glyphs.shaper.code))
-
-
-def aggregate(glyphs, info, aggregator, screen):
-        (width, height) = screen
-
-        # TODO: vectorize
-        infos = [info(point, data)
-                 for point, data
-                 in zip(glyphs.points(), glyphs.data())]
-        aggregates = aggregator.allocate(width, height, glyphs, infos)
-        for idx, points in enumerate(glyphs.points()):
-            aggregator.combine(aggregates, points, glyphs.shaper.code, infos[idx])
-        return aggregates
-
-
-# TODO: Add specialization here.  Take a 3rd argument 'specializer';
-#       if omitted, just use aggregates
-def shade(aggregates, shader):
-    """Convert a set of aggregate into another set of aggregates
-       according to some data shader.  Many common cases, the result
-       aggregates is an image, but it does not need to be.
-
-       NOTE:  This is currently a rather simple function.  It is included now
-       as an extension point.
-
-       * aggregates -- input aggregaets
-       * shader -- data shader used in the conversion
-    """
-    return shader.shade(aggregates)
-
-
-class Aggregator(object):
-    out_type = None
-    in_type = None
-    identity = None
-
-    def allocate(self, width, height, glyphset, infos):
-        """
-        Create an array suitable for processing the passed dataset
-        into the requested grid size.
-
-        * width - The width of the bin grid
-        * height - The height of the bin grid
-        * glyphset - The points that will be processed
-        * infos - The info values that accompany the glyphset
-
-        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
-        """
-        pass
-
-    def combine(self, existing, points, shapecode, val):
-        """
-        * existing - out_type numpy array, aggregate values for all glyphs seen
-        * points - points that define a shape
-        * shapecode - Code that determines how points are interpreted
-        * val -- Info value associated with the current set of points
-        """
-        pass
-
-    def rollup(*vals):
-        """
-        Combine multiple sets of aggregates.
-
-        * vals - list of numpy arrays with type out_type
-        """
-        pass
-
-
+# ---------------------- Shaders and related utilities --------------------
 # TODO: Add specialization to Shaders....
 class Shader(object):
     def makegrid(self, grid):
@@ -208,17 +206,6 @@ class Seq(Shader):
         return Seq(list(self._parts) + other)
 
 
-class PixelAggregator(Aggregator):
-    def __init__(self, pixelfunc):
-        self.pixelfunc = pixelfunc
-
-    def aggregate(self, grid):
-        outgrid = np.empty_like(self._projected, dtype=np.int32)
-        # outgrid = np.empty_like(self._projected, dtype=aggregator.out_dtype)
-        outgrid.ravel()[:] = map(lambda ids: self.pixelfunc(self._glyphset, ids),
-                                 self._projected.flat)
-
-
 class PixelShader(Shader):
     "Data shader that does non-vectorized per-pixel shading."
 
@@ -254,6 +241,12 @@ class Color(list):
         self.b = b
         self.a = a
 
+        if ((r > 255 or r < 0)
+            or (g > 255 or g < 0)
+            or (b > 255 or b < 0)
+            or (a > 255 or a < 0)):
+                raise ValueError
+
     def asarray(self):
         return np.array(self, dtype=np.uint8)
 
@@ -273,58 +266,3 @@ def zoom_fit(screen, bounds, balanced=True):
         x_scale = max(x_scale, y_scale)
         y_scale = x_scale
     return [-gx/x_scale, -gy/y_scale, 1/x_scale, 1/y_scale]
-
-
-# ---------------------- Demo Utilities ---------------------------
-def load_csv(filename, skip, xc, yc, vc, width, height):
-    source = open(filename, 'r')
-    glyphs = []
-    data = []
-
-    for i in range(0, skip):
-        source.readline()
-
-    for line in source:
-        line = re.split("\s*,\s*", line)
-        x = float(line[xc].strip())
-        y = float(line[yc].strip())
-        v = float(line[vc].strip()) if vc >= 0 else 1
-        g = [x, y, width, height]
-        glyphs.append(g)
-        data.append(v)
-
-    source.close()
-    return glyphset.Glyphset(glyphs, data,
-                             glyphset.Literals(glyphset.ShapeCodes.RECT))
-
-
-def main():
-    # Abstract rendering function implementation modules (for demo purposes only)
-    import numeric
-    import infos
-
-    source = sys.argv[1]
-    skip = int(sys.argv[2])
-    xc = int(sys.argv[3])
-    yc = int(sys.argv[4])
-    vc = int(sys.argv[5])
-    size = float(sys.argv[6])
-    glyphs = load_csv(source, skip, xc, yc, vc, size, size)
-
-    screen = (10, 10)
-    ivt = zoom_fit(screen, glyphs.bounds())
-
-    image = render(glyphs,
-                   infos.id(),
-                   numeric.Count(),
-                   numeric.AbsSegment(Color(0, 0, 0, 0),
-                                      Color(255, 255, 255, 255),
-                                      .5),
-                   screen,
-                   ivt)
-
-    print image
-
-
-if __name__ == "__main__":
-        main()

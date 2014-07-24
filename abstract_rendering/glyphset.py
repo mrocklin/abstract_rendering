@@ -1,4 +1,6 @@
 import numpy as np
+import re
+
 
 def enum(**enums): return type('Enum', (), enums)
 ShapeCodes = enum(POINT=0, LINE=1, RECT=2)
@@ -158,3 +160,30 @@ def idx(i):
     def f(a):
         return a[i]
     return f
+
+
+def load_csv(filename, skip, xc, yc, vc, width, height, shapecode):
+    """Turn a csv file into a glyphset.
+
+    This is a fairly naive regulary-expression based parser
+    (it doesn't handle quotes, blank lines or much else).
+    It is useful for getting simple datasets into the system.
+    """
+    source = open(filename, 'r')
+    glyphs = []
+    data = []
+
+    for i in range(0, skip):
+        source.readline()
+
+    for line in source:
+        line = re.split("\s*,\s*", line)
+        x = float(line[xc].strip())
+        y = float(line[yc].strip())
+        v = float(line[vc].strip()) if vc >= 0 else 1
+        g = [x, y, width, height]
+        glyphs.append(g)
+        data.append(v)
+
+    source.close()
+    return Glyphset(glyphs, data, Literals(shapecode))

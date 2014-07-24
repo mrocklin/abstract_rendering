@@ -14,5 +14,17 @@ class IdTests(unittest.TestCase):
         self.assertIs(aggs, out)
 
 
+class EmptyListTests(unittest.TestCase):
+    def test(self):
+        ls = general.EmptyList()
+        self.assertIsNone(ls[0])
+        self.assertIsNone(ls[-1])
+        self.assertIsNone(ls[30])
+        self.assertIsNone(ls[9048])
+        self.assertIsNone(ls[100398384])
+        self.assertIsNone(ls[3])
+        self.assertIsNone(ls[490])
+   
+
 if __name__ == '__main__':
     unittest.main()

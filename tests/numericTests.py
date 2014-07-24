@@ -7,7 +7,7 @@ import abstract_rendering.core as core
 from abstract_rendering.glyphset import ShapeCodes
 
 
-class Count(unittest.TestCase):
+class CountTests(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Count()
 
@@ -59,7 +59,7 @@ class Count(unittest.TestCase):
         self.assertTrue(np.array_equal(result, twos))
 
 
-class Sum(unittest.TestCase):
+class SumTests(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Sum()
 
@@ -110,7 +110,7 @@ class Sum(unittest.TestCase):
         self.assertTrue(np.array_equal(result, twos))
 
 
-class Floor(unittest.TestCase):
+class FloorTests(unittest.TestCase):
     def test(self):
         op = numeric.Floor()
 
@@ -125,7 +125,7 @@ class Floor(unittest.TestCase):
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
 
-class Interpolate(unittest.TestCase):
+class InterpolateTests(unittest.TestCase):
     def _run_test(self, low, high, msg):
         op = numeric.Interpolate(low, high)
 
@@ -145,7 +145,7 @@ class Interpolate(unittest.TestCase):
         self._run_test(1, 11, "One to Eleven")
 
 
-class Power(unittest.TestCase):
+class PowerTests(unittest.TestCase):
     def test(self):
         op = numeric.Power(2)
 
@@ -165,7 +165,7 @@ class Power(unittest.TestCase):
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
 
-class Cuberoot(unittest.TestCase):
+class CuberootTests(unittest.TestCase):
     def test(self):
         op = numeric.Cuberoot()
 
@@ -186,7 +186,7 @@ class Cuberoot(unittest.TestCase):
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
 
-class Sqrt(unittest.TestCase):
+class SqrtTests(unittest.TestCase):
     def test(self):
         op = numeric.Sqrt()
 
@@ -206,7 +206,7 @@ class Sqrt(unittest.TestCase):
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
 
-class BinarySegment(unittest.TestCase):
+class BinarySegmentTests(unittest.TestCase):
     def test(self):
         w = core.Color(255, 255, 255, 255)
         b = core.Color(0, 0, 0, 255)
@@ -228,7 +228,7 @@ class BinarySegment(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected))
 
 
-class InterpolateColors(unittest.TestCase):
+class InterpolateColorsTests(unittest.TestCase):
     def test_linear(self):
         red = core.Color(255, 0, 0, 255)
         white = core.Color(255, 255, 255, 255)
@@ -244,7 +244,7 @@ class InterpolateColors(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected))
 
 
-class Spread(unittest.TestCase):
+class SpreadTests(unittest.TestCase):
     def run_spread(self, spread, in_vals, expected):
         op = numeric.Spread(spread)
         out = op.shade(in_vals)
