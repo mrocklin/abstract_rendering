@@ -15,7 +15,8 @@ def bressenham(canvas, line, val):
     while True:
         canvas[y0, x0] = val
 
-        if x0 == x1 and y0 == y1: break
+        if x0 == x1 and y0 == y1:
+            break
 
         e2 = err * 2
         if e2 > -dy:

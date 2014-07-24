@@ -24,7 +24,7 @@ class EmptyListTests(unittest.TestCase):
         self.assertIsNone(ls[100398384])
         self.assertIsNone(ls[3])
         self.assertIsNone(ls[490])
-   
+
 
 if __name__ == '__main__':
     unittest.main()

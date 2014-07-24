@@ -54,7 +54,7 @@ class CountCategories(unittest.TestCase):
                              [[0, 0, 0],
                               [0, 0, 0],
                               [0, 0, 0],
-                              [0, 0, 0]]], dtype=np.int).transpose((1,2,0))
+                              [0, 0, 0]]], dtype=np.int).transpose((1, 2, 0))
 
         self.assertEqual(existing.shape, expected.shape)
         self.assertTrue(np.array_equal(existing, expected))
@@ -99,7 +99,7 @@ class ToCounts(unittest.TestCase):
 
         shape = aggs.shape
         aggs = np.arange(0, reduce(operator.mul, shape))
-        aggs = aggs.reshape((depth, height, width)).transpose((1,2,0))
+        aggs = aggs.reshape((depth, height, width)).transpose((1, 2, 0))
         out = op.shade(aggs)
 
         self.assertEquals((height, width), out.shape, "Unexpected out shape")
@@ -162,7 +162,7 @@ class MinPercent(unittest.TestCase):
         aggs = np.array([[[0, 1, 2, 3, 4]],
                          [[1, 2, 3, 4, 0]],
                          [[2, 3, 4, 0, 1]],
-                         [[3, 4, 0, 1, 2]]]).transpose((1,2,0))
+                         [[3, 4, 0, 1, 2]]]).transpose((1, 2, 0))
 
         above = op0_5.above
         below = op0_5.below
@@ -195,7 +195,7 @@ class HDAlpha(unittest.TestCase):
 
         aggs = np.array([[[1, 0, 0, 0]],
                          [[0, 1, 0, 0]],
-                         [[0, 0, 1, 0]]]).transpose((1,2,0))
+                         [[0, 0, 1, 0]]]).transpose((1, 2, 0))
         expected = np.array([[self.red, self.green, self.blue, op.background]])
         self.assertTrue(np.array_equal(op.shade(aggs), expected))
 
@@ -204,7 +204,7 @@ class HDAlpha(unittest.TestCase):
 
         aggs = np.array([[[1, 0, 0]],
                          [[1, 1, 0]],
-                         [[0, 1, 1]]]).transpose((1,2,0))
+                         [[0, 1, 1]]]).transpose((1, 2, 0))
 
         expected = np.array([[[127, 127,   0, 255],
                               [  0, 127, 127, 255],

@@ -9,8 +9,8 @@ class Const(unittest.TestCase):
         info = infos.const(3)
 
         self.assertTrue(callable(info))
-        self.assertEqual(3, info(3,3))
-        self.assertEqual(3, info(None,23))
+        self.assertEqual(3, info(3, 3))
+        self.assertEqual(3, info(None, 23))
         self.assertEqual(3, info("", None))
         self.assertEqual(3, info([2, 4, 3], []))
         self.assertEqual(3, info(object(), self))
@@ -35,7 +35,8 @@ class ValAt(unittest.TestCase):
         self.assertEqual("three", info(None, ["zero", "one", "two", "three"]))
         self.assertEqual("Nothing", info(None, None))
         self.assertEqual("Nothing", info(None, []))
-        self.assertEqual("Nothing", info(None, [1,2]))
+        self.assertEqual("Nothing", info(None, [1, 2]))
+
 
 class Key(unittest.TestCase):
     def test(self):
@@ -45,15 +46,16 @@ class Key(unittest.TestCase):
         self.assertEqual(3, info(None, {"val": 3, "other": 6}))
         self.assertEqual("seven", info(None, {"value": 3, "other": 6}))
 
+
 class Attribute(unittest.TestCase):
 
     class Has():
         val = 13
-        other= 6
-    
+        other = 6
+
     class HasNot():
         value = 13
-        other= 6
+        other = 6
 
     def test(self):
         info = infos.attribute("val", "seven")

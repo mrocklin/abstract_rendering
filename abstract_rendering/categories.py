@@ -169,6 +169,6 @@ class HDAlpha(core.Shader):
     @staticmethod
     def opaqueblend(catcolors, counts, sums):
         weighted = (counts/sums[:, :, np.newaxis]).astype(float)
-        weighted = catcolors[np.newaxis, np.newaxis,:] * weighted[:, :, :, np.newaxis]
+        weighted = catcolors[np.newaxis, np.newaxis, :] * weighted[:, :, :, np.newaxis]
         colors = weighted.sum(axis=2).astype(np.uint8)
         return colors
