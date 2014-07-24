@@ -13,7 +13,7 @@ class CountCategories(unittest.TestCase):
         op = categories.CountCategories()
         (width, height, depth) = (6, 3, 7)
         out = op.allocate(width, height, None, range(depth))
-        expected = np.zeros((depth, height, width))
+        expected = np.zeros((height, width, depth))
         self.assertTrue(np.array_equal(out, expected))
 
     def test_combine_points(self):
@@ -25,8 +25,8 @@ class CountCategories(unittest.TestCase):
         existing = op.allocate(width, height, None, range(cats))
         op.combine(existing, glyph, ShapeCodes.POINT, 1)
 
-        expected = np.zeros((cats, height, width))
-        expected[1, 0, 0] = 1
+        expected = np.zeros((height, width, cats))
+        expected[0, 0, 1] = 1
         self.assertTrue(np.array_equal(existing, expected))
 
         (width, height) = (3, 4)
@@ -34,8 +34,8 @@ class CountCategories(unittest.TestCase):
         existing = op.allocate(width, height, None, range(cats))
         op.combine(existing, glyph, ShapeCodes.POINT, 2)
 
-        expected = np.zeros((cats, height, width), dtype=np.int)
-        expected[2, 1, 2] = 1
+        expected = np.zeros((height, width, cats), dtype=np.int)
+        expected[1, 2, 2] = 1
         self.assertTrue(np.array_equal(existing, expected))
 
     def test_combine_rect(self):
@@ -54,8 +54,9 @@ class CountCategories(unittest.TestCase):
                              [[0, 0, 0],
                               [0, 0, 0],
                               [0, 0, 0],
-                              [0, 0, 0]]], dtype=np.int)
+                              [0, 0, 0]]], dtype=np.int).transpose((1,2,0))
 
+        self.assertEqual(existing.shape, expected.shape)
         self.assertTrue(np.array_equal(existing, expected))
 
     def test_rollup(self):
@@ -98,7 +99,7 @@ class ToCounts(unittest.TestCase):
 
         shape = aggs.shape
         aggs = np.arange(0, reduce(operator.mul, shape))
-        aggs = aggs.reshape(shape)
+        aggs = aggs.reshape((depth, height, width)).transpose((1,2,0))
         out = op.shade(aggs)
 
         self.assertEquals((height, width), out.shape, "Unexpected out shape")
@@ -118,18 +119,18 @@ class Select(unittest.TestCase):
 
         aggregator = categories.CountCategories()
         aggs = aggregator.allocate(width, height, None, range(0, depth))
-        aggs[0] = 1
-        aggs[1] = 2
-        aggs[2] = 3
+        aggs[:, :, 0] = 1
+        aggs[:, :, 1] = 2
+        aggs[:, :, 2] = 3
 
-        expected = np.empty((depth, height, width), dtype=np.int)
-        expected[0] = 1
-        expected[1] = 2
-        expected[2] = 3
+        expected = np.empty((height, width, depth), dtype=np.int)
+        expected[:, :, 0] = 1
+        expected[:, :, 1] = 2
+        expected[:, :, 2] = 3
 
-        self.assertTrue(np.array_equal(op0.shade(aggs), expected[0]))
-        self.assertTrue(np.array_equal(op1.shade(aggs), expected[1]))
-        self.assertTrue(np.array_equal(op2.shade(aggs), expected[2]))
+        self.assertTrue(np.array_equal(op0.shade(aggs), expected[:, :, 0]))
+        self.assertTrue(np.array_equal(op1.shade(aggs), expected[:, :, 1]))
+        self.assertTrue(np.array_equal(op2.shade(aggs), expected[:, :, 2]))
 
 
 class MinPercent(unittest.TestCase):
@@ -161,7 +162,7 @@ class MinPercent(unittest.TestCase):
         aggs = np.array([[[0, 1, 2, 3, 4]],
                          [[1, 2, 3, 4, 0]],
                          [[2, 3, 4, 0, 1]],
-                         [[3, 4, 0, 1, 2]]])
+                         [[3, 4, 0, 1, 2]]]).transpose((1,2,0))
 
         above = op0_5.above
         below = op0_5.below
@@ -192,10 +193,10 @@ class HDAlpha(unittest.TestCase):
     def test_simple(self):
         op = categories.HDAlpha([self.red, self.green, self.blue])
 
-        aggs = np.array([[[1, 0, 0]],
-                         [[0, 1, 0]],
-                         [[0, 0, 1]]])
-        expected = np.array([[self.red, self.green, self.blue]])
+        aggs = np.array([[[1, 0, 0, 0]],
+                         [[0, 1, 0, 0]],
+                         [[0, 0, 1, 0]]]).transpose((1,2,0))
+        expected = np.array([[self.red, self.green, self.blue, op.background]])
         self.assertTrue(np.array_equal(op.shade(aggs), expected))
 
     def test_blend(self):
@@ -203,7 +204,7 @@ class HDAlpha(unittest.TestCase):
 
         aggs = np.array([[[1, 0, 0]],
                          [[1, 1, 0]],
-                         [[0, 1, 1]]])
+                         [[0, 1, 1]]]).transpose((1,2,0))
 
         expected = np.array([[[127, 127,   0, 255],
                               [  0, 127, 127, 255],

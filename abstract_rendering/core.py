@@ -137,7 +137,7 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
     if type(val) == np.ndarray:
         fill = nparray
-        extShape = (val.shape[0],)
+        extShape = val.shape
     else:
         fill = scalar
         extShape = ()
@@ -146,11 +146,11 @@ def glyphAggregates(glyph, shapeCode, val, default):
     if shapeCode == glyphset.ShapeCodes.POINT:
         array = np.copy(val)  # TODO: Not sure this is always an array...verify
     elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]),
+        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
                          dtype=np.int32)
         fill(array, val)
     elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty(extShape+(glyph[3]-glyph[1], glyph[2]-glyph[0]),
+        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
                          dtype=np.int32)
         fill(array, default)
         geometry.bressenham(array, glyph, val)

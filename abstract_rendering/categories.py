@@ -39,19 +39,18 @@ class CountCategories(core.Aggregator):
            Output array shape is (#cats, height, width).
         """
         self.cats = np.unique(infos)
-        return np.zeros((len(self.cats), height, width), dtype=self.out_type)
+        return np.zeros((height, width, len(self.cats)), dtype=self.out_type)
 
     def combine(self, existing, points, shapecode, val):
-        entry = np.zeros((len(self.cats), 1, 1))
+        entry = np.zeros(len(self.cats))
         idx = np.nonzero(self.cats == val)[0][0]
         entry[idx] = 1
         update = core.glyphAggregates(points, shapecode, entry, self.identity)
-        existing[:, points[1]:points[3], points[0]:points[2]] \
+        existing[points[1]:points[3], points[0]:points[2], :] \
                 += update
-            #+= update.reshape(len(self.cats), 1, 1)
 
     def rollup(self, *vals):
-        """NOTE: Assumes co-registration of categoires..."""
+        """NOTE: Assumes co-registration of categories..."""
         return reduce(lambda x, y: x+y,  vals)
 
 
@@ -63,7 +62,7 @@ class ToCounts(core.Shader):
     @staticmethod
     def shade(grid, dtype=None):
         dtype = (grid.dtype if dtype is None else dtype)
-        return np.sum(grid, axis=0, dtype=dtype)
+        return grid.sum(axis=2, dtype=dtype)
 
 
 class Select(core.Shader):
@@ -80,7 +79,7 @@ class Select(core.Shader):
         self.slice = slice
 
     def shade(self, aggregates):
-        return aggregates[self.slice]
+        return aggregates[:, :, self.slice]
 
 
 class MinPercent(core.Shader):
@@ -111,12 +110,12 @@ class MinPercent(core.Shader):
         self.background = background.asarray()
 
     def shade(self, grid):
-        (depth, height, width) = grid.shape
+        (height, width, depth) = grid.shape
         outgrid = np.empty((height, width, 4), dtype=np.uint8)
 
         sums = ToCounts.shade(grid, dtype=np.float32)
         maskbg = (sums == 0)
-        mask = (grid[self.cat]/sums) >= self.cutoff
+        mask = (grid[:, :, self.cat]/sums) >= self.cutoff
 
         outgrid[mask] = self.above
         outgrid[~mask] = self.below
@@ -135,7 +134,7 @@ class HDAlpha(core.Shader):
         background -- Color for empty category list (default is white)
 
         TODO: Change 'colors' to a dictionary of category-to-color mapping
-        TODO: mask out zero-sum regions in alpha and opaque blend 
+        TODO: mask out zero-sum regions in alpha and opaque blend
         """
         # self.colors = dict(zip(colors.keys(), map(lambda v: v.asarray(), colors.values)))
         self.catcolors = np.array(map(lambda v: v.asarray(), colors))
@@ -153,7 +152,6 @@ class HDAlpha(core.Shader):
         HDAlpha.alpha(colors, sums, mask, self.alphamin, self.log, self.logbase)
         return colors
 
-
     # ------------------- Utilities -----------------
     @staticmethod
     def alpha(colors, sums, mask, alphamin, dolog=False, base=10):
@@ -168,10 +166,9 @@ class HDAlpha(core.Shader):
                    mask,
                    ((alphamin + ((1-alphamin) * (sums/maxval)))*255).astype(np.uint8))
 
-
     @staticmethod
     def opaqueblend(catcolors, counts, sums):
-        weighted = (counts/sums[np.newaxis, :, :]).astype(float)
-        weighted = catcolors[:, np.newaxis, np.newaxis]*weighted[:, :, :, np.newaxis]
-        colors = weighted.sum(axis=0).astype(np.uint8)
+        weighted = (counts/sums[:, :, np.newaxis]).astype(float)
+        weighted = catcolors[np.newaxis, np.newaxis,:] * weighted[:, :, :, np.newaxis]
+        colors = weighted.sum(axis=2).astype(np.uint8)
         return colors

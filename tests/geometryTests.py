@@ -64,12 +64,13 @@ class BressenhamTests(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected), "Simple horizontal")
 
     def test_compound(self):
-        out = np.zeros((2, 5, 1))
+        cats = [1,2]
+        out = np.zeros((5, 1, len(cats)))
         #TODO: Fails because of the way broadcast works.  Consider using (y, x, depth) instead of (depth, x, y)
-        geometry.bressenham(out, [0, 0, 0, 5], [1, 2])
-        expected = np.empty((2, 5, 1))
-        expected[0] = 1
-        expected[1] = 2
+        geometry.bressenham(out, [0, 0, 0, 4], cats)
+        expected = np.empty(out.shape)
+        expected[:,:, 0] = 1
+        expected[:,:, 1] = 2
         self.assertTrue(np.array_equal(out, expected), "Complex value")
 
 
