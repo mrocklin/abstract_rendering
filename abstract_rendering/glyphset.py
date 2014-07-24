@@ -173,6 +173,10 @@ def load_csv(filename, skip, xc, yc, vc, width, height, shapecode):
     glyphs = []
     data = []
 
+    if shapecode is ShapeCodes.POINT:
+        width = 0
+        height = 0
+
     for i in range(0, skip):
         source.readline()
 

@@ -50,9 +50,9 @@ class BressenhamTests(unittest.TestCase):
 
     def test_diag(self):
         out = np.zeros((10, 11), dtype=np.int)
-        geometry.bressenham(out, [1, 1, 6, 5], 1)
+        geometry.bressenham(out, [2, 2, 6, 5], 1)
         expected = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                             [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
@@ -61,7 +61,21 @@ class BressenhamTests(unittest.TestCase):
                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        self.assertTrue(np.array_equal(out, expected), "Simple horizontal")
+        self.assertTrue(np.array_equal(out, expected))
+
+        out = np.zeros((10, 11), dtype=np.int)
+        geometry.bressenham(out, [7, 3, 1, 8], 1)
+        expected = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        self.assertTrue(np.array_equal(out, expected))
 
     def test_compound(self):
         cats = [1,2]

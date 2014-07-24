@@ -153,6 +153,7 @@ def glyphAggregates(glyph, shapeCode, val, default):
         array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
                          dtype=np.int32)
         fill(array, default)
+        glyph = [0, 0, array.shape[1]-1, array.shape[0]-1]  # Translate shape to be in the corner of the update canvas
         geometry.bressenham(array, glyph, val)
 
     return array

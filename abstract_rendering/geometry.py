@@ -12,7 +12,7 @@ def bressenham(canvas, line, val):
     sx = 1 if x0 < x1 else -1
     sy = 1 if y0 < y1 else -1
 
-    while (True):
+    while True:
         canvas[y0, x0] = val
 
         if x0 == x1 and y0 == y1: break
