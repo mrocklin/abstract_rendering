@@ -136,7 +136,7 @@ class ToPoint(Shaper):
     code = ShapeCodes.POINT
 
     def __init__(self, tox, toy, *args):
-        self.fns = [tox, toy, lambda x: 0, lambda(x): 0]
+        self.fns = [tox, toy, lambda x: 0, lambda x: 0]
 
 
 # Utilities for shapers....
