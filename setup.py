@@ -4,6 +4,9 @@ from os.path import abspath, exists, join, dirname
 import sys
 import os 
 import sys
+from numpy import get_include
+
+numpy_include_dir = get_include()
 
 ### Flag to indicate that libdispatch should be used (OS X only)
 DISPATCH_FLAG = "--dispatch"
@@ -135,5 +138,12 @@ setup(name='abstract_rendering',
                   'abstract_rendering.glyphset', 
                   'abstract_rendering.infos',
                   'abstract_rendering.numeric'],
-      ext_modules=[transform]
+      ext_modules=[
+          transform,
+          Extension('abstract_rendering.contour',
+              ['abstract_rendering/cntr.c'], 
+              include_dirs=[numpy_include_dir],
+              define_macros=[('NUMPY', None)],
+              extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC'])
+          ]
      )
