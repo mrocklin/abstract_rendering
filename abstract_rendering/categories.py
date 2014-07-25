@@ -9,12 +9,6 @@ import core
 import numpy as np
 from math import log
 
-try:
-    from numba import autojit
-except ImportError:
-    print "Error loading numba."
-    autojit = lambda f: f
-
 
 # ------------ Aggregators -------------------
 class CountCategories(core.Aggregator):
