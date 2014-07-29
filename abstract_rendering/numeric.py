@@ -142,6 +142,7 @@ class InterpolateColors(core.Shader):
     Zero-values are treated separately from other values.
 
     TODO: Remove log, just provide a shader to pre-transform the values
+    TODO: Can this be combined with 'Interpolate'? Detect 'color' at construction time...
 
     * low -- Color ot use for lowest value
     * high -- Color to use for highest values
