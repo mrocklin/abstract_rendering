@@ -105,9 +105,9 @@ class MinPercent(core.Shader):
 
         self.cutoff = cutoff
         self.cat = cat
-        self.above = above.asarray()
-        self.below = below.asarray()
-        self.background = background.asarray()
+        self.above = np.array(above, dtype=np.uint8)
+        self.below = np.array(below, dtype=np.uint8)
+        self.background = np.array(background, dtype=np.uint8)
 
     def shade(self, grid):
         (height, width, depth) = grid.shape
@@ -137,8 +137,8 @@ class HDAlpha(core.Shader):
         TODO: mask out zero-sum regions in alpha and opaque blend
         """
         # self.colors = dict(zip(colors.keys(), map(lambda v: v.asarray(), colors.values)))
-        self.catcolors = np.array(map(lambda v: v.asarray(), colors))
-        self.background = background.asarray()
+        self.catcolors = np.array(map(lambda v: np.array(v, dtype=np.uint8), colors))
+        self.background = np.array(background, dtype=np.uint8)
         self.alphamin = alphamin
         self.log = log
         self.logbase = logbase

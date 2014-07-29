@@ -248,9 +248,6 @@ class Color(list):
             or (a > 255 or a < 0)):
                 raise ValueError
 
-    def asarray(self):
-        return np.array(self, dtype=np.uint8)
-
 
 def zoom_fit(screen, bounds, balanced=True):
     """What affine transform will zoom-fit the given items?

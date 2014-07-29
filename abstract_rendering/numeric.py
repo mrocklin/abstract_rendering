@@ -194,12 +194,12 @@ class InterpolateColors(core.Shader):
 
         grid[mask] = 0
 
-        colorspan = (self.high.asarray().astype(np.int32)
-                     - self.low.asarray().astype(np.int32))
+        colorspan = (np.array(self.high, dtype=np.uint8)
+                     - np.array(self.low, dtype=np.uint8))
 
         outgrid = (percents[:, :, np.newaxis]
                    * colorspan[np.newaxis, np.newaxis, :]
-                   + self.low.asarray()).astype(np.uint8)
+                   + np.array(self.low, dtype=np.uint8)).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 
@@ -210,11 +210,11 @@ class InterpolateColors(core.Shader):
         span = float(max-min)
         percents = (grid-min)/span
 
-        colorspan = (self.high.asarray().astype(np.int32)
-                     - self.low.asarray().astype(np.int32))
+        colorspan = (np.array(self.high, dtype=np.int32)
+                     - np.array(self.low, dtype=np.int32))
         outgrid = (percents[:, :, np.newaxis]
                    * colorspan[np.newaxis, np.newaxis, :]
-                   + self.low.asarray()).astype(np.uint8)
+                   + np.array(self.low, dtype=np.uint8)).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 

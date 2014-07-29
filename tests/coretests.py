@@ -8,7 +8,7 @@ class ColorTest(unittest.TestCase):
     def _test(self, r, g, b, a):
         c = core.Color(r, g, b, a)
         self.assertEqual(core.Color(r, g, b, a), c)
-        self.assertEqual(c.asarray().tolist(),  [r, g, b, a])
+        self.assertEqual(c,  [r, g, b, a])
 
     def test1(self): self._test(0, 0, 0, 0)
     def test2(self): self._test(10, 30, 40, 20)
