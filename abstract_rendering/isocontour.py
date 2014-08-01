@@ -19,11 +19,11 @@ class Contour(core.Fuser):
         self.levels = levels
 
     def fuse(self, grid):
-        x_range = self.x_range if self.x_range else (0, grid.shape[0]-1)
+        x_range = self.x_range if self.x_range else (0, grid.shape[1]-1)
         y_range = self.y_range if self.y_range else (0, grid.shape[0]-1)
 
-        xs = np.linspace(x_range[0], x_range[1], num=grid.shape[0])
-        ys = np.linspace(y_range[0], y_range[1], num=grid.shape[1])
+        xs = np.linspace(x_range[0], x_range[1], num=grid.shape[1])
+        ys = np.linspace(y_range[0], y_range[1], num=grid.shape[0])
         xg, yg = np.meshgrid(xs, ys)
 
         c = Cntr(xg, yg, grid)
@@ -35,11 +35,11 @@ class Contour(core.Fuser):
 
         isos = dict()
         for i in range(0, len(levels)-1):
-            span = (levels[i], levels[i+1], True)
-            points = c.trace(*span)
-            isos[levels[i]] = points
+            span = (levels[i], levels[i+1])
+            points = c.trace(*span, points=True)
+            isos[levels[i]] = points[0]
 
-        return points
+        return isos
 
     @classmethod
     def nlevels(cls, grid, n):

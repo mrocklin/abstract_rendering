@@ -32,7 +32,8 @@ class CountTests(unittest.TestCase):
         c = iso.Contour(levels=2)
         levels = c.fuse(self.pyramid2)
 
-        expected = [[(1.0, 0.0),
+        self.assertEquals(len(levels), 1)
+        expected0 = [(1.0, 0.0),
                      (2.0, 0.0),
                      (3.0, 1.0),
                      (3.0, 2.0),
@@ -40,9 +41,34 @@ class CountTests(unittest.TestCase):
                      (1.0, 3.0),
                      (0.0, 2.0),
                      (0.0, 1.0),
-                     (1.0, 0.0)]]
-        self.assertListEqual(levels, expected)
+                     (1.0, 0.0)]
 
+        self.assertListEqual(levels[0], expected0)
+
+    def test_fuse4(self):
+        c = iso.Contour(levels=4)
+        levels = c.fuse(self.pyramid4)
+
+        self.assertEquals(len(levels), 3)
+        self.assertEquals(len(levels[0]), 49)
+        self.assertEquals(len(levels[1]), 35)
+        self.assertEquals(len(levels[2]), 13)
+
+        expected2 = [(3.0, 2.0),
+                     (4.0, 2.0),
+                     (5.0, 2.0),
+                     (5.5, 3.0),
+                     (5.5, 4.0),
+                     (5.5, 5.0),
+                     (5.0, 6.0),
+                     (4.0, 6.0),
+                     (3.0, 6.0),
+                     (2.0, 5.0),
+                     (2.0, 4.0),
+                     (2.0, 3.0),
+                     (3.0, 2.0)]
+
+        self.assertListEqual(levels[2], expected2)
 
 if __name__ == '__main__':
     unittest.main()
