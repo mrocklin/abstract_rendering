@@ -5,7 +5,7 @@ Utilities that apply across a broad variety of categories.
 import core
 
 
-class Id(core.Shader):
+class Id(core.CellShader):
     """ Return the input unchanged.
 
     This DOES NOT make a copy of the input

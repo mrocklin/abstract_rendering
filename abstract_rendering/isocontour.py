@@ -3,7 +3,7 @@ from abstract_rendering.contour import Cntr
 import numpy as np
 
 
-class Contour(core.Fuser):
+class Contour(core.ShapeShader):
     def __init__(self, x_range=None, y_range=None, levels=5):
         """
          x/y_range arguments determine the data values that correspond

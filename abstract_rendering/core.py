@@ -9,7 +9,7 @@ import glyphset
 
 
 # ------------------- Core process functions --------------------------------
-def render(glyphs, info, aggregator, transform, screen, vt):
+def render(glyphs, info, aggregator, shader, screen, vt):
     """
     Render a set of glyphs to the described canvas.
 
@@ -22,7 +22,7 @@ def render(glyphs, info, aggregator, transform, screen, vt):
     """
     projected = project(glyphs, vt)
     aggregates = aggregate(projected, info, aggregator, screen)
-    return transform(aggregates, transform)
+    return shade(aggregates, shader)
 
 
 def project(glyphs, viewxform):
@@ -65,7 +65,7 @@ def aggregate(glyphs, info, aggregator, screen):
 
 # TODO: Add specialization here.  Take a 3rd argument 'specializer';
 #       if omitted, just use aggregates
-def transform(aggregates, transform):
+def shade(aggregates, shader):
     """Convert a set of aggregate into another set of aggregates
        according to some data shader.  Many common cases, the result
        aggregates is an image, but it does not need to be.
@@ -76,7 +76,7 @@ def transform(aggregates, transform):
        * aggregates -- input aggregaets
        * shader -- data shader used in the conversion
     """
-    return transform(aggregates)
+    return shader(aggregates)
 
 
 # -------------------------  Aggregators and related utilities ----------------
@@ -159,28 +159,30 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
 
 # ---------------------- Shaders and related utilities --------------------
-class Transform(object):
-    """Transforms take grids and analize them.
+class Shader(object):
+    """Shaders take grids and analize them.
        This interface asserts that instances are callable
        and accept a grid as their input.
     """
+
+    def shade(self, grid):
+        """Execute the actual data shader operation."""
+        raise NotImplementedError
 
     def __call__(self, grid):
         raise NotImplementedError
 
 
-class Fuser(Transform):
+class ShapeShader(Shader):
     """Convert a grid into a set of shapes."""
-    def fuse(self, grid):
-        """Execute the fusing operation."""
-        raise NotImplementedError
 
     def __call__(self, grid):
         return self.fuse(grid)
 
 
 # TODO: Add specialization to Shaders....
-class Shader(Transform):
+class CellShader(Shader):
+    """Cell shaders takea  grid and produce a new grid."""
     def makegrid(self, grid):
         """Create an output grid.
 
@@ -190,27 +192,19 @@ class Shader(Transform):
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
 
-    def shade(self, grid):
-        """Execute the actual data shader operation."""
-        raise NotImplementedError
-
     def __call__(self, grid):
         """Execute shading."""
         return self.shade(grid)
 
     def __add__(self, other):
-        """Extend this shader by executing another transform in sequence."""
-        if (not isinstance(other, Transform)):
-                raise TypeError("Can only extend with Transforms.  Received a " + str(type(other)))
+        """Extend this shader by executing another transfer in sequence."""
+        if (not isinstance(other, Shader)):
+                raise TypeError("Can only extend with Shaders.  Received a " + str(type(other)))
         return Seq(self, other)
 
 
-class Seq(Transform):
-    """
-    Transform that does a sequence of other shaders,
-    possibly ending in a non-shader transform.
-
-    """
+class Seq(Shader):
+    "Shader that does a sequence of shaders."
 
     def __init__(self, *args):
         self._parts = args
@@ -224,24 +218,20 @@ class Seq(Transform):
         if (other is None):
             return self
         elif not isinstance(self._parts[-1], Shader):
-            raise ValueError("Sequence already terminated by non-shader.  Cannot extend further.")
-        elif (not isinstance(other, Transform)):
-            raise TypeError("Can only extend with Transforms. Received a " + str(type(other)))
+            raise ValueError("Sequence already terminated by cell-shader.  Cannot extend further.")
+        elif (not isinstance(other, Shader)):
+            raise TypeError("Can only extend with Shaders. Received a " + str(type(other)))
         return Seq(list(self._parts) + other)
 
 
-class PixelShader(Shader):
+class SequentialShader(Shader):
     "Data shader that does non-vectorized per-pixel shading."
-
-    def __init__(self, pixelfunc, prefunc):
-        self.pixelfunc = pixelfunc
-        self.prefunc = prefunc
 
     def _pre(self, grid):
         "Executed exactly once before pixelfunc is called on any cell. "
         pass
 
-    def pixelfunc(grid, x, y):
+    def cellfunc(grid, x, y):
         "Override this method. It will be called for each pixel in the grid."
         raise NotImplementedError
 
@@ -251,7 +241,7 @@ class PixelShader(Shader):
         (width, height) = grid.shape
         for x in xrange(0, width):
             for y in xrange(0, height):
-                outgrid[x, y] = self.pixelfunc(grid, x, y)
+                outgrid[x, y] = self.cellfunc(grid, x, y)
 
         return outgrid
 
@@ -266,13 +256,10 @@ class Color(list):
         self.a = a
 
         if ((r > 255 or r < 0)
-            or (g > 255 or g < 0)
-            or (b > 255 or b < 0)
-            or (a > 255 or a < 0)):
-                raise ValueError
-
-    def asarray(self):
-        return np.array(self, dtype=np.uint8)
+                or (g > 255 or g < 0)
+                or (b > 255 or b < 0)
+                or (a > 255 or a < 0)):
+            raise ValueError
 
 
 def zoom_fit(screen, bounds, balanced=True):

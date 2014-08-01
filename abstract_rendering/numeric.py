@@ -2,12 +2,6 @@ import core
 import numpy as np
 import math
 
-try:
-    from numba import autojit
-except ImportError:
-    print "Error loading numba."
-    autojit = lambda f: f
-
 
 # ----------- Aggregators -----------
 class Count(core.Aggregator):
@@ -43,12 +37,12 @@ class Sum(core.Aggregator):
 
 
 # -------------- Shaders -----------------
-class Floor(core.Shader):
+class Floor(core.CellShader):
     def shade(self, grid):
         return np.floor(grid)
 
 
-class Interpolate(core.Shader):
+class Interpolate(core.CellShader):
     """Interpolate between two numbers.
          Projects the input values between the low and high values passed.
          The Default is 0 to 1.
@@ -69,7 +63,7 @@ class Interpolate(core.Shader):
         return self.low + (percents * (self.high-self.low))
 
 
-class Power(core.Shader):
+class Power(core.CellShader):
     """Raise to a power.    Power may be fracional."""
     def __init__(self, pow):
         self.pow = pow
@@ -83,12 +77,12 @@ class Cuberoot(Power):
         super(Cuberoot, self).__init__(1/3.0)
 
 
-class Sqrt(core.Shader):
+class Sqrt(core.CellShader):
     def shade(self, grid):
         return np.sqrt(grid)
 
 
-class Spread(core.PixelShader):
+class Spread(core.SequentialShader):
     """Spreads the values out in a regular pattern.
 
          TODO: Currently only does square spread.  Extend to other shapes.
@@ -102,7 +96,7 @@ class Spread(core.PixelShader):
     def makegrid(self, grid):
         return np.zeros_like(grid)
 
-    def pixelfunc(self, grid, x, y):
+    def cellfunc(self, grid, x, y):
         minx = max(0, x-math.floor(self.size/2.0))
         maxx = x+math.ceil(self.size/2.0)
         miny = max(0, y-math.floor(self.size/2.0))
@@ -112,7 +106,7 @@ class Spread(core.PixelShader):
         return parts.sum()
 
 
-class BinarySegment(core.Shader):
+class BinarySegment(core.CellShader):
     """
     Paint all pixels with aggregate value above divider one color
     and below the divider another.
@@ -136,7 +130,7 @@ class BinarySegment(core.Shader):
         return outgrid
 
 
-class InterpolateColors(core.Shader):
+class InterpolateColors(core.CellShader):
     """
     High-definition interpolation between two colors.
     Zero-values are treated separately from other values.
@@ -195,12 +189,12 @@ class InterpolateColors(core.Shader):
 
         grid[mask] = 0
 
-        colorspan = (self.high.asarray().astype(np.int32)
-                     - self.low.asarray().astype(np.int32))
+        colorspan = (np.array(self.high, dtype=np.uint8)
+                     - np.array(self.low, dtype=np.uint8))
 
         outgrid = (percents[:, :, np.newaxis]
                    * colorspan[np.newaxis, np.newaxis, :]
-                   + self.low.asarray()).astype(np.uint8)
+                   + np.array(self.low, dtype=np.uint8)).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 
@@ -211,11 +205,11 @@ class InterpolateColors(core.Shader):
         span = float(max-min)
         percents = (grid-min)/span
 
-        colorspan = (self.high.asarray().astype(np.int32)
-                     - self.low.asarray().astype(np.int32))
+        colorspan = (np.array(self.high, dtype=np.int32)
+                     - np.array(self.low, dtype=np.int32))
         outgrid = (percents[:, :, np.newaxis]
                    * colorspan[np.newaxis, np.newaxis, :]
-                   + self.low.asarray()).astype(np.uint8)
+                   + np.array(self.low, dtype=np.uint8)).astype(np.uint8)
         outgrid[mask] = self.reserve
         return outgrid
 
