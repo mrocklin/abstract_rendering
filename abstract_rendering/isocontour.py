@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Contour(core.ShapeShader):
-    def __init__(self, x_range=None, y_range=None, levels=5):
+    def __init__(self, x_range=None, y_range=None, levels=5, points=True):
         """
          x/y_range arguments determine the data values that correspond
          to the max/min values on the axes of the input grid.  It is assumed
@@ -12,11 +12,16 @@ class Contour(core.ShapeShader):
 
          levels as a scalar determines how many levels will be built
          levels as a list determines where the levels are built
+
+         points flag indicates if it should return values as [(x,y), (x,y)...] (default, True)
+         or as [[x,x,x,x...],[y,y,y...]] (False)
+
         """
 
         self.x_range = x_range
         self.y_range = y_range
         self.levels = levels
+        self.points = points
 
     def fuse(self, grid):
         x_range = self.x_range if self.x_range else (0, grid.shape[1]-1)
@@ -36,7 +41,7 @@ class Contour(core.ShapeShader):
         isos = dict()
         for i in range(0, len(levels)-1):
             span = (levels[i], levels[i+1])
-            points = c.trace(*span, points=True)
+            points = c.trace(*span, points=self.points)
             isos[levels[i]] = points[0]
 
         return isos
