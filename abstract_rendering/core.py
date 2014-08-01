@@ -9,7 +9,7 @@ import glyphset
 
 
 # ------------------- Core process functions --------------------------------
-def render(glyphs, info, aggregator, shader, screen, vt):
+def render(glyphs, info, aggregator, transform, screen, vt):
     """
     Render a set of glyphs to the described canvas.
 
@@ -22,8 +22,7 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     """
     projected = project(glyphs, vt)
     aggregates = aggregate(projected, info, aggregator, screen)
-    shaded = shade(aggregates, shader)
-    return shaded
+    return transform(aggregates, transform)
 
 
 def project(glyphs, viewxform):
@@ -66,7 +65,7 @@ def aggregate(glyphs, info, aggregator, screen):
 
 # TODO: Add specialization here.  Take a 3rd argument 'specializer';
 #       if omitted, just use aggregates
-def shade(aggregates, shader):
+def transform(aggregates, transform):
     """Convert a set of aggregate into another set of aggregates
        according to some data shader.  Many common cases, the result
        aggregates is an image, but it does not need to be.
@@ -77,7 +76,7 @@ def shade(aggregates, shader):
        * aggregates -- input aggregaets
        * shader -- data shader used in the conversion
     """
-    return shader.shade(aggregates)
+    return transform(aggregates)
 
 
 # -------------------------  Aggregators and related utilities ----------------
