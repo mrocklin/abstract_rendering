@@ -5,4 +5,5 @@ python:
 install:
   - "python setup.py install"
 script: 
-  - nosetests tests/*.py
+  - cd tests
+  - nosetests *.py

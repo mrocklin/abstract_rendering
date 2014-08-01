@@ -2,13 +2,6 @@ import core
 import numpy as np
 import math
 
-try:
-    from numba import autojit
-except ImportError:
-    print "Error loading numba."
-    autojit = lambda f: f
-
-
 # ----------- Aggregators -----------
 class Count(core.Aggregator):
     """Count the number of items that fall into a particular grid element."""
