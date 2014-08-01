@@ -160,8 +160,28 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
 
 # ---------------------- Shaders and related utilities --------------------
+class Transform(object):
+    """Transforms take grids and analize them.
+       This interface asserts that instances are callable
+       and accept a grid as their input.
+    """
+
+    def __call__(self, grid):
+        raise NotImplementedError
+
+
+class Fuser(Transform):
+    """Convert a grid into a set of shapes."""
+    def fuse(self, grid):
+        """Execute the fusing operation."""
+        raise NotImplementedError
+
+    def __call__(self, grid):
+        return self.fuse(grid)
+
+
 # TODO: Add specialization to Shaders....
-class Shader(object):
+class Shader(Transform):
     def makegrid(self, grid):
         """Create an output grid.
 
@@ -175,35 +195,39 @@ class Shader(object):
         """Execute the actual data shader operation."""
         raise NotImplementedError
 
+    def __call__(self, grid):
+        """Execute shading."""
+        return self.shade(grid)
+
     def __add__(self, other):
-        """Extend this shader by executing another in sequence."""
-        if (not isinstance(other, Shader)):
-                raise TypeError("Can only extend with a shader.  Received a " + str(type(other)))
+        """Extend this shader by executing another transform in sequence."""
+        if (not isinstance(other, Transform)):
+                raise TypeError("Can only extend with Transforms.  Received a " + str(type(other)))
         return Seq(self, other)
 
 
-class Seq(Shader):
-    """Shader that does a sequence of other shaders."""
+class Seq(Transform):
+    """
+    Transform that does a sequence of other shaders,
+    possibly ending in a non-shader transform.
+
+    """
 
     def __init__(self, *args):
         self._parts = args
 
-    def makegrid(self, grid):
+    def __call__(self, grid):
         for t in self._parts:
-            grid = t.makegrid(grid)
-        return grid
-
-    def shade(self, grid):
-        for t in self._parts:
-            grid = t.shade(grid)
+            grid = t(grid)
         return grid
 
     def __add__(self, other):
         if (other is None):
             return self
-
-        elif (not isinstance(other, Shader)):
-            raise TypeError("Can only extend shader with another shader. Received a " + str(type(other)))
+        elif not isinstance(self._parts[-1], Shader):
+            raise ValueError("Sequence already terminated by non-shader.  Cannot extend further.")
+        elif (not isinstance(other, Transform)):
+            raise TypeError("Can only extend with Transforms. Received a " + str(type(other)))
         return Seq(list(self._parts) + other)
 
 
