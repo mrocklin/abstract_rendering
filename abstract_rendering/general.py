@@ -12,6 +12,9 @@ class Id(core.Shader):
     It is usually used a zero-cost placeholder.
     """
 
+    def makegrid(self, grid):
+        return grid
+
     def shade(self, grid):
         return grid
 
