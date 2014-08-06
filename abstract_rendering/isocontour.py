@@ -39,10 +39,10 @@ class Contour(core.ShapeShader):
             levels = Contour.nlevels(grid, self.levels)
 
         isos = dict()
-        for i in range(0, len(levels)-1):
-            span = (levels[i], levels[i+1])
-            points = c.trace(*span, points=self.points)
-            isos[levels[i]] = points[0]
+        for i in range(0, len(levels)):
+            points = c.trace(levels[i], points=self.points)
+            points = [[],[]] if len(points) == 0 else points[0]
+            isos[levels[i]] = points
 
         return isos
 

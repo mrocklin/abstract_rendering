@@ -30,9 +30,9 @@ class CountTests(unittest.TestCase):
 
     def test_fuse2(self):
         c = iso.Contour(levels=2)
-        levels = c.fuse(self.pyramid2)
+        contours = c.fuse(self.pyramid2)
 
-        self.assertEquals(len(levels), 1)
+        self.assertEquals(len(contours), 2)
         expected0 = [(1.0, 0.0),
                      (2.0, 0.0),
                      (3.0, 1.0),
@@ -43,16 +43,16 @@ class CountTests(unittest.TestCase):
                      (0.0, 1.0),
                      (1.0, 0.0)]
 
-        self.assertListEqual(levels[0], expected0)
+        self.assertListEqual(contours[0], expected0)
 
     def test_fuse4(self):
         c = iso.Contour(levels=4)
         levels = c.fuse(self.pyramid4)
 
-        self.assertEquals(len(levels), 3)
-        self.assertEquals(len(levels[0]), 49)
-        self.assertEquals(len(levels[1]), 35)
-        self.assertEquals(len(levels[2]), 13)
+        self.assertEquals(len(levels), 4)
+        self.assertEquals(len(levels[0]), 27)
+        self.assertEquals(len(levels[1]), 19)
+        self.assertEquals(len(levels[2]), 13) 
 
         expected2 = [(3.0, 2.0),
                      (4.0, 2.0),
