@@ -172,6 +172,12 @@ class Shader(object):
     def __call__(self, grid):
         raise NotImplementedError
 
+    def __add__(self, other):
+        """Extend this shader by executing another transfer in sequence."""
+        if (not isinstance(other, Shader)):
+                raise TypeError("Can only extend with Shaders.  Received a " + str(type(other)))
+        return Seq(self, other)
+
 
 class ShapeShader(Shader):
     """Convert a grid into a set of shapes."""
@@ -196,13 +202,6 @@ class CellShader(Shader):
         """Execute shading."""
         return self.shade(grid)
 
-    def __add__(self, other):
-        """Extend this shader by executing another transfer in sequence."""
-        if (not isinstance(other, Shader)):
-                raise TypeError("Can only extend with Shaders.  Received a " + str(type(other)))
-        return Seq(self, other)
-
-
 class Seq(Shader):
     "Shader that does a sequence of shaders."
 
@@ -221,7 +220,7 @@ class Seq(Shader):
             raise ValueError("Sequence already terminated by cell-shader.  Cannot extend further.")
         elif (not isinstance(other, Shader)):
             raise TypeError("Can only extend with Shaders. Received a " + str(type(other)))
-        return Seq(list(self._parts) + other)
+        return Seq(*(self._parts + (other,)))
 
 
 class SequentialShader(Shader):
@@ -230,18 +229,23 @@ class SequentialShader(Shader):
     def _pre(self, grid):
         "Executed exactly once before pixelfunc is called on any cell. "
         pass
+    
+    def __call__(self, grid):
+        """Execute shading."""
+        return self.shade(grid)
 
     def cellfunc(grid, x, y):
-        "Override this method. It will be called for each pixel in the grid."
+        "Override this method. It will be called for each pixel in the outgrid."
         raise NotImplementedError
 
     def shade(self, grid):
+        """Access each element in the out grid sequentially"""
         outgrid = self.makegrid(grid)
         self._pre(grid)
-        (width, height) = grid.shape
+        (height, width) = outgrid.shape
         for x in xrange(0, width):
             for y in xrange(0, height):
-                outgrid[x, y] = self.cellfunc(grid, x, y)
+                outgrid[y, x] = self.cellfunc(grid, x, y)
 
         return outgrid
 

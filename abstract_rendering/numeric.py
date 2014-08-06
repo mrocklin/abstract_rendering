@@ -83,26 +83,46 @@ class Sqrt(core.CellShader):
 
 
 class Spread(core.SequentialShader):
-    """Spreads the values out in a regular pattern.
+    """
+    Spreads the values out in a regular pattern.
 
-         TODO: Currently only does square spread.  Extend to other shapes.
-         TODO: Restricted to numbers right now...implement corresponding thing
-               for categories...might be 'generic'
+    * factor : How far in each direction to spread
+
+    TODO: Currently only does square spread.  Extend to other shapes.
+    TODO: Restricted to numbers right now...implement corresponding thing
+    for categories...might be 'generic'
     """
 
-    def __init__(self, size):
-        self.size = size
+    def __init__(self, up=1, down=1, left=1, right=1, factor=np.NaN):
+        if np.isnan(factor):
+            self.up = up
+            self.down = down
+            self.left = left
+            self.right = right
+        else:
+            self.up = factor
+            self.down = factor
+            self.left = factor
+            self.right = factor
 
     def makegrid(self, grid):
-        return np.zeros_like(grid)
+        height = grid.shape[0]
+        width = grid.shape[1]
+        others = grid.shape[2:]
+
+        height = height + self.up + self.down
+        width = width + self.left + self.right
+
+        return np.zeros((height, width) + others, dtype=grid.dtype)
 
     def cellfunc(self, grid, x, y):
-        minx = max(0, x-math.floor(self.size/2.0))
-        maxx = x+math.ceil(self.size/2.0)
-        miny = max(0, y-math.floor(self.size/2.0))
-        maxy = y+math.ceil(self.size/2.0)
+        (height, width) = grid.shape
+        minx = max(0, x-self.left-self.right) 
+        maxx = min(x+1, width)
+        miny = max(0, y-self.up-self.down) 
+        maxy = min(y+1, height)
 
-        parts = grid[minx:maxx, miny:maxy]
+        parts = grid[miny:maxy, minx:maxx]
         return parts.sum()
 
 
@@ -136,7 +156,7 @@ class InterpolateColors(core.CellShader):
     Zero-values are treated separately from other values.
 
     TODO: Remove log, just provide a shader to pre-transform the values
-    TODO: Can this be combined with 'Interpolate'? Detect 'color' at construction time...
+    TODO: Can this be combined with 'Interpolate'? Detect type at construction
 
     * low -- Color ot use for lowest value
     * high -- Color to use for highest values
