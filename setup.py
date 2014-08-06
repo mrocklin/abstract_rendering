@@ -137,6 +137,7 @@ setup(name='abstract_rendering',
                   'abstract_rendering.geometry',
                   'abstract_rendering.glyphset', 
                   'abstract_rendering.infos',
+                  'abstract_rendering.isocontour',
                   'abstract_rendering.numeric'],
       ext_modules=[
           transform,
