@@ -1,5 +1,5 @@
 import core
-from abstract_rendering.contour import Cntr
+from abstract_rendering._cntr import Cntr
 import numpy as np
 
 
@@ -41,7 +41,7 @@ class Contour(core.ShapeShader):
         isos = dict()
         for i in range(0, len(levels)):
             points = c.trace(levels[i], points=self.points)
-            points = [[],[]] if len(points) == 0 else points[0]
+            points = [[], []] if len(points) == 0 else points[0]
             isos[levels[i]] = points
 
         return isos

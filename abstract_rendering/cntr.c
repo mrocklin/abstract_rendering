@@ -1699,14 +1699,14 @@ static PyMethodDef module_methods[] = {
 
 #ifdef NUMARRAY
 PyMODINIT_FUNC
-initcontour(void)
+init_cntr(void)
 {
     PyObject* m;
 
     if (PyType_Ready(&CntrType) < 0)
         return;
 
-    m = Py_InitModule3("contour", module_methods,
+    m = Py_InitModule3("_cntr", module_methods,
                        "Contouring engine as an extension type (numarray).");
 
     if (m == NULL)
@@ -1719,14 +1719,14 @@ initcontour(void)
 
 #else
 PyMODINIT_FUNC
-initcontour(void)
+init_cntr(void)
 {
     PyObject* m;
 
     if (PyType_Ready(&CntrType) < 0)
         return;
 
-    m = Py_InitModule3("contour", module_methods,
+    m = Py_InitModule3("_cntr", module_methods,
                        "Contouring engine as an extension type (Numeric).");
 
     if (m == NULL)

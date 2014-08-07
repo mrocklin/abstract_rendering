@@ -1,10 +1,10 @@
 from __future__ import print_function
 import unittest
 import numpy as np
-import abstract_rendering.isocontour as iso
+from abstract_rendering.contour import Contour
 
 
-class CountTests(unittest.TestCase):
+class ContourTests(unittest.TestCase):
     pyramid2 = np.array(
             [[0, 0, 0, 0],
              [0, 1, 1, 0],
@@ -23,13 +23,13 @@ class CountTests(unittest.TestCase):
              [0, 0, 0, 0, 0, 0, 0, 0]])
 
     def test_nlevels(self):
-        self.assertListEqual(iso.Contour.nlevels(self.pyramid2, 2).tolist(), [0, 1])
-        self.assertListEqual(iso.Contour.nlevels(self.pyramid2, 3).tolist(), [0, .5, 1])
-        self.assertListEqual(iso.Contour.nlevels(self.pyramid4, 2).tolist(), [0, 3])
-        self.assertListEqual(iso.Contour.nlevels(self.pyramid4, 4).tolist(), [0, 1, 2, 3])
+        self.assertListEqual(Contour.nlevels(self.pyramid2, 2).tolist(), [0, 1])
+        self.assertListEqual(Contour.nlevels(self.pyramid2, 3).tolist(), [0, .5, 1])
+        self.assertListEqual(Contour.nlevels(self.pyramid4, 2).tolist(), [0, 3])
+        self.assertListEqual(Contour.nlevels(self.pyramid4, 4).tolist(), [0, 1, 2, 3])
 
     def test_fuse2(self):
-        c = iso.Contour(levels=2)
+        c = Contour(levels=2)
         contours = c.fuse(self.pyramid2)
 
         self.assertEquals(len(contours), 2)
@@ -46,13 +46,13 @@ class CountTests(unittest.TestCase):
         self.assertListEqual(contours[0], expected0)
 
     def test_fuse4(self):
-        c = iso.Contour(levels=4)
+        c = Contour(levels=4)
         levels = c.fuse(self.pyramid4)
 
         self.assertEquals(len(levels), 4)
         self.assertEquals(len(levels[0]), 27)
         self.assertEquals(len(levels[1]), 19)
-        self.assertEquals(len(levels[2]), 13) 
+        self.assertEquals(len(levels[2]), 13)
 
         expected2 = [(3.0, 2.0),
                      (4.0, 2.0),
