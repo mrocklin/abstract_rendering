@@ -110,6 +110,12 @@ class SumTests(unittest.TestCase):
         self.assertTrue(np.array_equal(result, twos))
 
 
+def _test_extend(op1, tester):
+    op2 = numeric.Cuberoot()
+    tester.assertIsInstance(op1 + op2, core.Seq)
+    tester.assertIsInstance(op2 + op1, core.Seq)
+
+
 class FloorTests(unittest.TestCase):
     def test(self):
         op = numeric.Floor()
@@ -123,6 +129,9 @@ class FloorTests(unittest.TestCase):
         out = op.shade(a)
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
+
+    def extend(self):
+        _test_extend(numeric.Floor(), self)
 
 
 class InterpolateTests(unittest.TestCase):
@@ -144,6 +153,9 @@ class InterpolateTests(unittest.TestCase):
     def test_1to11(self):
         self._run_test(1, 11, "One to Eleven")
 
+    def test_extend(self):
+        _test_extend(numeric.Interpolate(1,2), self)
+
 
 class PowerTests(unittest.TestCase):
     def test(self):
@@ -163,6 +175,9 @@ class PowerTests(unittest.TestCase):
         out = op.shade(a)
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
+
+    def test_extend(self):
+        _test_extend(numeric.Power(3), self)
 
 
 class CuberootTests(unittest.TestCase):
@@ -185,6 +200,9 @@ class CuberootTests(unittest.TestCase):
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
 
+    def test_extend(self):
+        _test_extend(numeric.Cuberoot(), self)
+
 
 class SqrtTests(unittest.TestCase):
     def test(self):
@@ -204,6 +222,9 @@ class SqrtTests(unittest.TestCase):
         out = op.shade(a)
         self.assertTrue(np.array_equal(out, expected),
                         "Unequal:\n %s \n = \n %s" % (out, expected))
+
+    def test_extend(self):
+        _test_extend(numeric.Sqrt(), self)
 
 
 class BinarySegmentTests(unittest.TestCase):
@@ -227,6 +248,9 @@ class BinarySegmentTests(unittest.TestCase):
                              [b, b, w, w, b]])
         self.assertTrue(np.array_equal(out, expected))
 
+    def test_extend(self):
+        _test_extend(numeric.BinarySegment(None, None, 3), self)
+
 
 class InterpolateColorsTests(unittest.TestCase):
     def test_linear(self):
@@ -243,14 +267,17 @@ class InterpolateColorsTests(unittest.TestCase):
         expected = np.dstack((const, var, var, const))
         self.assertTrue(np.array_equal(out, expected))
 
+    def test_extend(self):
+        _test_extend(numeric.InterpolateColors(None, None), self)
+
 
 class SpreadTests(unittest.TestCase):
     def run_spread(self, spread, in_vals, expected):
-        op = numeric.Spread(spread)
+        op = numeric.Spread(factor=spread)
         out = op.shade(in_vals)
 
         self.assertTrue(np.array_equal(out, expected),
-                        'incorrect value spreading')
+                        'incorrect value spreading\ni %s' % str(out))
 
     def test_spread_oneseed(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -258,11 +285,13 @@ class SpreadTests(unittest.TestCase):
                         [0, 0, 0, 0],
                         [0, 0, 0, 0]])
 
-        ex = np.asarray([[0, 0, 0, 0],
-                         [0, 1, 1, 0],
-                         [0, 1, 1, 0],
-                         [0, 0, 0, 0]])
-        self.run_spread(2, a, ex)
+        ex = np.asarray([[0, 0, 0, 0, 0, 0],
+                         [0, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0]])
+        self.run_spread(1, a, ex)
 
     def test_spread_twoseeds(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -270,25 +299,31 @@ class SpreadTests(unittest.TestCase):
                         [0, 0, 0, 0],
                         [0, 0, 0, 0]])
 
-        ex = np.asarray([[0, 0, 0, 0],
-                         [0, 1, 2, 1],
-                         [0, 1, 2, 1],
-                         [0, 0, 0, 0]])
-        self.run_spread(2, a, ex)
+        ex = np.asarray([[0, 0, 0, 0, 0, 0],
+                         [0, 1, 2, 2, 1, 0],
+                         [0, 1, 2, 2, 1, 0],
+                         [0, 1, 2, 2, 1, 0],
+                         [0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0]])
+        self.run_spread(1, a, ex)
 
-    def test_spread_three(self):
+    def test_spread_two(self):
         a = np.asarray([[0, 0, 0, 0],
                         [0, 1, 0, 0],
                         [0, 0, 0, 0],
                         [0, 0, 0, 0]])
 
-        ex = np.asarray([[1, 1, 1, 0],
-                         [1, 1, 1, 0],
-                         [1, 1, 1, 0],
-                         [0, 0, 0, 0]])
-        self.run_spread(3, a, ex)
+        ex = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0]])
+        self.run_spread(2, a, ex)
 
-    def spread_zero(self):
+    def test_spread_zero(self):
         a = np.asarray([[0, 0, 0, 0],
                         [0, 1, 0, 0],
                         [0, 0, 0, 0],
@@ -299,6 +334,9 @@ class SpreadTests(unittest.TestCase):
                          [0, 0, 0, 0],
                          [0, 0, 0, 0]])
         self.run_spread(0, a, ex)
+
+    def test_extend(self):
+        _test_extend(numeric.Spread(), self)
 
 
 if __name__ == '__main__':

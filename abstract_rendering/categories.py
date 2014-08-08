@@ -49,7 +49,7 @@ class CountCategories(core.Aggregator):
 
 
 # ----------- Shaders -----------------------
-class ToCounts(core.Shader):
+class ToCounts(core.CellShader):
     """Convert from count-by-categories to just raw counts.
        Then data shader functions from the count module can be used.
     """
@@ -59,7 +59,7 @@ class ToCounts(core.Shader):
         return grid.sum(axis=2, dtype=dtype)
 
 
-class Select(core.Shader):
+class Select(core.CellShader):
     """Get the counts from just one category.
 
        Operates by taking a single plane of the count of categories.
@@ -76,7 +76,7 @@ class Select(core.Shader):
         return aggregates[:, :, self.slice]
 
 
-class MinPercent(core.Shader):
+class MinPercent(core.CellShader):
     """If the item in the specified bin represents more than a certain percent
      of the total number of items, color it as "above" otherwise, "below"
 
@@ -117,7 +117,7 @@ class MinPercent(core.Shader):
         return outgrid
 
 
-class HDAlpha(core.Shader):
+class HDAlpha(core.CellShader):
     def __init__(self, colors, background=core.Color(255, 255, 255, 255),
                  alphamin=0, log=False, logbase=10):
         """

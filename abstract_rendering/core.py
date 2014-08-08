@@ -22,8 +22,7 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     """
     projected = project(glyphs, vt)
     aggregates = aggregate(projected, info, aggregator, screen)
-    shaded = shade(aggregates, shader)
-    return shaded
+    return shade(aggregates, shader)
 
 
 def project(glyphs, viewxform):
@@ -77,7 +76,7 @@ def shade(aggregates, shader):
        * aggregates -- input aggregaets
        * shader -- data shader used in the conversion
     """
-    return shader.shade(aggregates)
+    return shader(aggregates)
 
 
 # -------------------------  Aggregators and related utilities ----------------
@@ -160,8 +159,36 @@ def glyphAggregates(glyph, shapeCode, val, default):
 
 
 # ---------------------- Shaders and related utilities --------------------
-# TODO: Add specialization to Shaders....
 class Shader(object):
+    """Shaders take grids and analize them.
+       This interface asserts that instances are callable
+       and accept a grid as their input.
+    """
+
+    def shade(self, grid):
+        """Execute the actual data shader operation."""
+        raise NotImplementedError
+
+    def __call__(self, grid):
+        raise NotImplementedError
+
+    def __add__(self, other):
+        """Extend this shader by executing another transfer in sequence."""
+        if (not isinstance(other, Shader)):
+                raise TypeError("Can only extend with Shaders.  Received a " + str(type(other)))
+        return Seq(self, other)
+
+
+class ShapeShader(Shader):
+    """Convert a grid into a set of shapes."""
+
+    def __call__(self, grid):
+        return self.fuse(grid)
+
+
+# TODO: Add specialization to Shaders....
+class CellShader(Shader):
+    """Cell shaders takea  grid and produce a new grid."""
     def makegrid(self, grid):
         """Create an output grid.
 
@@ -171,64 +198,54 @@ class Shader(object):
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
 
-    def shade(self, grid):
-        """Execute the actual data shader operation."""
-        raise NotImplementedError
-
-    def __add__(self, other):
-        """Extend this shader by executing another in sequence."""
-        if (not isinstance(other, Shader)):
-                raise TypeError("Can only extend with a shader.  Received a " + str(type(other)))
-        return Seq(self, other)
-
+    def __call__(self, grid):
+        """Execute shading."""
+        return self.shade(grid)
 
 class Seq(Shader):
-    """Shader that does a sequence of other shaders."""
+    "Shader that does a sequence of shaders."
 
     def __init__(self, *args):
         self._parts = args
 
-    def makegrid(self, grid):
+    def __call__(self, grid):
         for t in self._parts:
-            grid = t.makegrid(grid)
-        return grid
-
-    def shade(self, grid):
-        for t in self._parts:
-            grid = t.shade(grid)
+            grid = t(grid)
         return grid
 
     def __add__(self, other):
         if (other is None):
             return self
-
+        elif not isinstance(self._parts[-1], Shader):
+            raise ValueError("Sequence already terminated by cell-shader.  Cannot extend further.")
         elif (not isinstance(other, Shader)):
-            raise TypeError("Can only extend shader with another shader. Received a " + str(type(other)))
-        return Seq(list(self._parts) + other)
+            raise TypeError("Can only extend with Shaders. Received a " + str(type(other)))
+        return Seq(*(self._parts + (other,)))
 
 
-class PixelShader(Shader):
+class SequentialShader(Shader):
     "Data shader that does non-vectorized per-pixel shading."
-
-    def __init__(self, pixelfunc, prefunc):
-        self.pixelfunc = pixelfunc
-        self.prefunc = prefunc
 
     def _pre(self, grid):
         "Executed exactly once before pixelfunc is called on any cell. "
         pass
+    
+    def __call__(self, grid):
+        """Execute shading."""
+        return self.shade(grid)
 
-    def pixelfunc(grid, x, y):
-        "Override this method. It will be called for each pixel in the grid."
+    def cellfunc(grid, x, y):
+        "Override this method. It will be called for each pixel in the outgrid."
         raise NotImplementedError
 
     def shade(self, grid):
+        """Access each element in the out grid sequentially"""
         outgrid = self.makegrid(grid)
         self._pre(grid)
-        (width, height) = grid.shape
+        (height, width) = outgrid.shape
         for x in xrange(0, width):
             for y in xrange(0, height):
-                outgrid[x, y] = self.pixelfunc(grid, x, y)
+                outgrid[y, x] = self.cellfunc(grid, x, y)
 
         return outgrid
 
@@ -243,10 +260,10 @@ class Color(list):
         self.a = a
 
         if ((r > 255 or r < 0)
-            or (g > 255 or g < 0)
-            or (b > 255 or b < 0)
-            or (a > 255 or a < 0)):
-                raise ValueError
+                or (g > 255 or g < 0)
+                or (b > 255 or b < 0)
+                or (a > 255 or a < 0)):
+            raise ValueError
 
 
 def zoom_fit(screen, bounds, balanced=True):

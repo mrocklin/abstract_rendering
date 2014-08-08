@@ -2,7 +2,7 @@ Abstract Rendering Examples
 ===========================
 
 The four function roles of abstract rendering (AR) are combined into
-recipies to do data analysis.  Here are some common AR recipies.
+recipes to do data analysis.  Here are some common AR recipes.
 
 
 High Definition Heatmap
@@ -19,10 +19,10 @@ Using naive alpha composition, individual pixels quickly saturate and additional
 no longer contribute additional color.  This is a silent failure of the system,
 essentially mis-representing all values over a threshold as equal.  Surprisingly,
 that threshold is often very low.  At 90% transparent, standard alpha composition
-saturates at just 25 items.  Even at the minimum opacity (just above truely transparent),
+saturates at just 25 items.  Even at the minimum opacity (just above truly transparent),
 only it is common to only get 256 items before saturation occurs.  
 
-The abstract rendering recipie for doing HD
+The abstract rendering recipe for doing HD
 
 Perceptual Correction
 ---------------------
@@ -37,15 +37,15 @@ High Definition Alpha
 
 Extending the idea of heatmaps to multiple event types leads to overlapping distributions
 of different types of events.  These different event types are often represented as
-different colors.  Composing each color component separately is a straightfoward
-change to the HD heatmap recipie.  (Perceptual correction in a multi-color environment
+different colors.  Composing each color component separately is a straightforward
+change to the HD heatmap recipe.  (Perceptual correction in a multi-color environment
 is not at all straightforward, conceptually nor computationally.)
 
 
 ISO Contours
 ---------------
 
-Taking value distribuions in another direction are ISO contours.  
+Taking value distributions in another direction are ISO contours.  
 ISO contours identify regions that all have *at least* a given value in them,
 essentially identifying dividing lines between regions. 
 

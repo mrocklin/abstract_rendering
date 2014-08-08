@@ -1,23 +1,27 @@
 from __future__ import print_function
 from distutils.core import setup, Extension
-from os.path import abspath, exists, join, dirname
+from os.path import abspath, join, dirname
 import sys
-import os 
-import sys
+import os
+from numpy import get_include
 
-### Flag to indicate that libdispatch should be used (OS X only)
+numpy_include_dir = get_include()
+
+# Flag to indicate that libdispatch should be used (OS X only)
 DISPATCH_FLAG = "--dispatch"
 
 if DISPATCH_FLAG in sys.argv:
-  transform = Extension('abstract_rendering.transform_libdispatch',
-                          ['abstract_rendering/transform_libdispatch.cpp'], 
-                           extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
-  del sys.argv[sys.argv.index(DISPATCH_FLAG)]
+    transform = Extension('abstract_rendering.transform_libdispatch',
+            ['abstract_rendering/transform_libdispatch.cpp'],
+            extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
+    del sys.argv[sys.argv.index(DISPATCH_FLAG)]
 
 else:
-  transform = Extension('abstract_rendering.transform',
-                             ['abstract_rendering/transform.cpp'],
-                             extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
+    transform = Extension('abstract_rendering.transform',
+            ['abstract_rendering/transform.cpp'],
+            extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
+
+
 def getsitepackages():
     """Returns a list containing all global site-packages directories
     (and possibly site-python)."""
@@ -41,7 +45,7 @@ def getsitepackages():
         elif _is_pypy:
             sitedirs = [os.path.join(prefix, 'site-packages')]
         elif sys.platform == 'darwin' and prefix == sys.prefix:
-            if prefix.startswith("/System/Library/Frameworks/"): # Apple's Python
+            if prefix.startswith("/System/Library/Frameworks/"):   # Apple's Python
                 sitedirs = [os.path.join("/Library/Python", sys.version[:3], "site-packages"),
                             os.path.join(prefix, "Extras", "lib", "python")]
 
@@ -102,7 +106,6 @@ def getsitepackages():
     return sitepackages
 
 
-
 site_packages = getsitepackages()[0]
 old_dir = join(site_packages, "abstract_rendering")
 path_file = join(site_packages, "abstract_rendering.pth")
@@ -111,29 +114,36 @@ path = abspath(dirname(__file__))
 if 'develop' in sys.argv:
     print("Develop mode.")
     if os.path.isdir(old_dir):
-      print("  - Removing package %s." % old_dir)
-      import shutil
-      shutil.rmtree(old_dir)
+        print("  - Removing package %s." % old_dir)
+        import shutil
+        shutil.rmtree(old_dir)
     with open(path_file, "w+") as f:
         f.write(path)
     print("  - writing path '%s' to %s" % (path, path_file))
     print()
     sys.exit()
 
-setup(name='abstract_rendering', 
-      version='0.2.0',
+setup(name='abstract_rendering',
+      version='0.3.0',
       description='Rendering as a binning process',
       author='Joseph Cottam',
       author_email='jcottam@indiana.edu',
       url='https://github.com/JosephCottam/AbstractRendering',
-      package_dir = {'abstract_rendering' : 'abstract_rendering'},
-      py_modules=['abstract_rendering.core', 
-                  'abstract_rendering.general', 
+      package_dir={'abstract_rendering': 'abstract_rendering'},
+      py_modules=['abstract_rendering.core',
+                  'abstract_rendering.general',
                   'abstract_rendering.categories',
                   'abstract_rendering.fast_project',
                   'abstract_rendering.geometry',
-                  'abstract_rendering.glyphset', 
+                  'abstract_rendering.glyphset',
                   'abstract_rendering.infos',
+                  'abstract_rendering.contour',
                   'abstract_rendering.numeric'],
-      ext_modules=[transform]
-     )
+      ext_modules=[
+          transform,
+          Extension('abstract_rendering._cntr',
+              ['abstract_rendering/cntr.c'],
+              include_dirs=[numpy_include_dir],
+              define_macros=[('NUMPY', None)],
+              extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC'])
+          ])

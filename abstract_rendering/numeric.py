@@ -2,6 +2,7 @@ import core
 import numpy as np
 import math
 
+
 # ----------- Aggregators -----------
 class Count(core.Aggregator):
     """Count the number of items that fall into a particular grid element."""
@@ -36,12 +37,12 @@ class Sum(core.Aggregator):
 
 
 # -------------- Shaders -----------------
-class Floor(core.Shader):
+class Floor(core.CellShader):
     def shade(self, grid):
         return np.floor(grid)
 
 
-class Interpolate(core.Shader):
+class Interpolate(core.CellShader):
     """Interpolate between two numbers.
          Projects the input values between the low and high values passed.
          The Default is 0 to 1.
@@ -62,7 +63,7 @@ class Interpolate(core.Shader):
         return self.low + (percents * (self.high-self.low))
 
 
-class Power(core.Shader):
+class Power(core.CellShader):
     """Raise to a power.    Power may be fracional."""
     def __init__(self, pow):
         self.pow = pow
@@ -76,39 +77,59 @@ class Cuberoot(Power):
         super(Cuberoot, self).__init__(1/3.0)
 
 
-class Sqrt(core.Shader):
+class Sqrt(core.CellShader):
     def shade(self, grid):
         return np.sqrt(grid)
 
 
-class Spread(core.PixelShader):
-    """Spreads the values out in a regular pattern.
+class Spread(core.SequentialShader):
+    """
+    Spreads the values out in a regular pattern.
 
-         TODO: Currently only does square spread.  Extend to other shapes.
-         TODO: Restricted to numbers right now...implement corresponding thing
-               for categories...might be 'generic'
+    * factor : How far in each direction to spread
+
+    TODO: Currently only does square spread.  Extend to other shapes.
+    TODO: Restricted to numbers right now...implement corresponding thing
+    for categories...might be 'generic'
     """
 
-    def __init__(self, size):
-        self.size = size
+    def __init__(self, up=1, down=1, left=1, right=1, factor=np.NaN):
+        if np.isnan(factor):
+            self.up = up
+            self.down = down
+            self.left = left
+            self.right = right
+        else:
+            self.up = factor
+            self.down = factor
+            self.left = factor
+            self.right = factor
 
     def makegrid(self, grid):
-        return np.zeros_like(grid)
+        height = grid.shape[0]
+        width = grid.shape[1]
+        others = grid.shape[2:]
 
-    def pixelfunc(self, grid, x, y):
-        minx = max(0, x-math.floor(self.size/2.0))
-        maxx = x+math.ceil(self.size/2.0)
-        miny = max(0, y-math.floor(self.size/2.0))
-        maxy = y+math.ceil(self.size/2.0)
+        height = height + self.up + self.down
+        width = width + self.left + self.right
 
-        parts = grid[minx:maxx, miny:maxy]
+        return np.zeros((height, width) + others, dtype=grid.dtype)
+
+    def cellfunc(self, grid, x, y):
+        (height, width) = grid.shape
+        minx = max(0, x-self.left-self.right) 
+        maxx = min(x+1, width)
+        miny = max(0, y-self.up-self.down) 
+        maxy = min(y+1, height)
+
+        parts = grid[miny:maxy, minx:maxx]
         return parts.sum()
 
 
-class BinarySegment(core.Shader):
+class BinarySegment(core.CellShader):
     """
     Paint all pixels with aggregate value above divider one color
-    and below the divider another.
+    and below the divider another.  Divider is part of the 'high' region.
 
     TODO: Extend so out can be something other than colors
     """
@@ -129,12 +150,13 @@ class BinarySegment(core.Shader):
         return outgrid
 
 
-class InterpolateColors(core.Shader):
+class InterpolateColors(core.CellShader):
     """
     High-definition interpolation between two colors.
     Zero-values are treated separately from other values.
 
     TODO: Remove log, just provide a shader to pre-transform the values
+    TODO: Can this be combined with 'Interpolate'? Detect type at construction
 
     * low -- Color ot use for lowest value
     * high -- Color to use for highest values
