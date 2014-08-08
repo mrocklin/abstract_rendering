@@ -129,7 +129,7 @@ class Spread(core.SequentialShader):
 class BinarySegment(core.CellShader):
     """
     Paint all pixels with aggregate value above divider one color
-    and below the divider another.
+    and below the divider another.  Divider is part of the 'high' region.
 
     TODO: Extend so out can be something other than colors
     """

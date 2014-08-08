@@ -48,5 +48,11 @@ class Contour(core.ShapeShader):
 
     @classmethod
     def nlevels(cls, grid, n):
-        """Given grid of values, pick out n values for iso contour levels"""
-        return np.linspace(grid.min(), grid.max(), n)
+        "Given grid of values, pick out n values for iso contour levels"
+
+        # The contouring library outlines places below the given value
+        # So we do n+1+1 (aka n+2). The first +1 is because grid.max()
+        # will always result in an empty contour.  The 2nd +1 to get
+        # n lines (aka, n+1 spaces between lines).  
+        # The [:-1] drops the level at grid.max()
+        return np.linspace(grid.min(), grid.max(), n+2)[:-1]
