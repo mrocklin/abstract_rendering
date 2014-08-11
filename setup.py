@@ -13,13 +13,13 @@ DISPATCH_FLAG = "--dispatch"
 if DISPATCH_FLAG in sys.argv:
     transform = Extension('abstract_rendering.transform_libdispatch',
             ['abstract_rendering/transform_libdispatch.cpp'],
-            extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
+            extra_compile_args=['-O3', '-Wall', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
     del sys.argv[sys.argv.index(DISPATCH_FLAG)]
 
 else:
     transform = Extension('abstract_rendering.transform',
             ['abstract_rendering/transform.cpp'],
-            extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
+            extra_compile_args=['-O3', '-Wall', '-fno-rtti', '-fno-exceptions', '-fPIC', '-lstdc++'])
 
 
 def getsitepackages():
