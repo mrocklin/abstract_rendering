@@ -8,7 +8,7 @@ import geometry
 import glyphset
 
 
-# ------------------- Core process functions --------------------------------
+# ------------------- Basic process function --------------------------------
 def render(glyphs, info, aggregator, shader, screen, vt):
     """
     Render a set of glyphs to the described canvas.
@@ -20,63 +20,10 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     * screen -- (width,height) of the canvas
     * vt -- View transform (converts canvas to pixels)
     """
-    projected = project(glyphs, vt)
-    aggregates = aggregate(projected, info, aggregator, screen)
-    return shade(aggregates, shader)
-
-
-def project(glyphs, viewxform):
-    """Project the points found in the glyphset according to the view transform.
-
-    * viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
-    * glyphs -- set of glyphs (represented as [x,y,w,h,...]
-    """
-    points = glyphs.points()
-    out = np.empty_like(points, dtype=np.int32)
-    _projectRects(viewxform, points, out)
-
-    # Ensure visilibity, make sure w/h are always at least one
-    # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
-    for i in xrange(0, out.shape[0]):
-        if out[i, 0] == out[i, 2]:
-            out[i, 2] += 1
-        if out[i, 1] == out[i, 3]:
-            out[i, 3] += 1
-
-    return glyphset.Glyphset(out, glyphs.data(),
-                             glyphset.Literals(glyphs.shaper.code))
-
-
-def aggregate(glyphs, info, aggregator, screen):
-        (width, height) = screen
-
-        # TODO: vectorize
-        infos = [info(point, data)
-                 for point, data
-                 in zip(glyphs.points(), glyphs.data())]
-        aggregates = aggregator.allocate(width, height, glyphs, infos)
-        for idx, points in enumerate(glyphs.points()):
-            aggregator.combine(aggregates,
-                               points,
-                               glyphs.shaper.code,
-                               infos[idx])
-        return aggregates
-
-
-# TODO: Add specialization here.  Take a 3rd argument 'specializer';
-#       if omitted, just use aggregates
-def shade(aggregates, shader):
-    """Convert a set of aggregate into another set of aggregates
-       according to some data shader.  Many common cases, the result
-       aggregates is an image, but it does not need to be.
-
-       NOTE:  This is currently a rather simple function.  It is included now
-       as an extension point.
-
-       * aggregates -- input aggregaets
-       * shader -- data shader used in the conversion
-    """
-    return shader(aggregates)
+    projected = glyphs.project(vt)
+    aggregates = aggregator.aggregate(projected, screen)
+    # TODO: Add shader specialization here
+    return shader.shade(aggregates)
 
 
 # -------------------------  Aggregators and related utilities ----------------
@@ -84,31 +31,13 @@ class Aggregator(object):
     out_type = None
     in_type = None
     identity = None
-
-    def allocate(self, width, height, glyphset, infos):
-        """
-        Create an array suitable for processing the passed dataset
-        into the requested grid size.
-
-        * width - The width of the bin grid
-        * height - The height of the bin grid
-        * glyphset - The points that will be processed
-        * infos - The info values that accompany the glyphset
-
-        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
-        """
+    
+    def aggregate(self, glyphset, screen):
+        "Given a glyphset, produce a of set aggregates for the given screen size."
         pass
 
-    def combine(self, existing, points, shapecode, val):
-        """
-        * existing - out_type numpy array, aggregate values for all glyphs seen
-        * points - points that define a shape
-        * shapecode - Code that determines how points are interpreted
-        * val -- Info value associated with the current set of points
-        """
-        pass
 
-    def rollup(*vals):
+    def rollup(self, *vals):
         """
         Combine multiple sets of aggregates.
 
@@ -117,45 +46,84 @@ class Aggregator(object):
         pass
 
 
-def glyphAggregates(glyph, shapeCode, val, default):
-    """Create a set of aggregates fo a single glyph. The set of aggregates will be
-       tight to the bound box of the shape but may not be completely filled
-       (thus the need for both 'val' and 'default').
+class GlyphAggregator(Aggregator):
+    def allocate(self, glyphset, screen):
+        """
+        Create an array suitable for processing the passed dataset
+        into the requested grid size.
 
-       * glyph -- Points that define the glyph
-       * shapeCode -- Code that indicates how to interpret the glyph
-       * val -- Value to place in bins that are hit by the shape
-       * default -- Value to place in bins not hit by the shape
-    """
+        * glyphset - The points that will be processed (already projected)
+        * screen -- The size of the bin-grid to produce
 
-    def scalar(array, val):
-        array.fill(val)
+        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
+        """
+        pass
+    
+    def combine(self, existing, points, shapecode, val):
+        """Add a new point to an existing set of aggregates.
 
-    def nparray(array, val):
-        array[:] = val
+        * existing - out_type numpy array, aggregate values for all glyphs seen
+        * points - points that define a shape
+        * shapecode - Code that determines how points are interpreted
+        * val -- Info value associated with the current set of points
+        """
+        pass
 
-    if type(val) == np.ndarray:
-        fill = nparray
-        extShape = val.shape
-    else:
-        fill = scalar
-        extShape = ()
+    def aggregate(self, glyphset, screen):
+        (width, height) = screen
 
-    # TODO: These are selectors...rename and move this somewhere else
-    if shapeCode == glyphset.ShapeCodes.POINT:
-        array = np.copy(val)  # TODO: Not sure this is always an array...verify
-    elif shapeCode == glyphset.ShapeCodes.RECT:
-        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
-                         dtype=np.int32)
-        fill(array, val)
-    elif shapeCode == glyphset.ShapeCodes.LINE:
-        array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
-                         dtype=np.int32)
-        fill(array, default)
-        glyph = [0, 0, array.shape[1]-1, array.shape[0]-1]  # Translate shape to be in the corner of the update canvas
-        geometry.bressenham(array, glyph, val)
+        # TODO: vectorize 
+        infos = [info(point, data)
+                 for point, data
+                 in zip(glyphs.points(), glyphs.data())]
+        aggregates = self.allocate(width, height, glyphs, glyphs.infos)
+        for idx, points in enumerate(glyphs.points()):
+            self.combine(aggregates,
+                               points,
+                               glyphs.shaper.code,
+                               infos[idx])
+        return aggregates
 
-    return array
+
+    def glyphAggregates(self, glyph, shapeCode, val, default):
+        """Create a set of aggregates for a single glyph. The set of aggregates will be
+           tight to the bound box of the shape but may not be completely filled
+           (thus the need for both 'val' and 'default').
+
+           * glyph -- Points that define the glyph
+           * shapeCode -- Code that indicates how to interpret the glyph
+           * val -- Value to place in bins that are hit by the shape
+           * default -- Value to place in bins not hit by the shape
+        """
+
+        def scalar(array, val):
+            array.fill(val)
+
+        def nparray(array, val):
+            array[:] = val
+
+        if type(val) == np.ndarray:
+            fill = nparray
+            extShape = val.shape
+        else:
+            fill = scalar
+            extShape = ()
+
+        # TODO: These are selectors...rename and move this somewhere else
+        if shapeCode == glyphset.ShapeCodes.POINT:
+            array = np.copy(val)  # TODO: Not sure this is always an array...verify
+        elif shapeCode == glyphset.ShapeCodes.RECT:
+            array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
+                             dtype=np.int32)
+            fill(array, val)
+        elif shapeCode == glyphset.ShapeCodes.LINE:
+            array = np.empty((glyph[3]-glyph[1], glyph[2]-glyph[0])+extShape,
+                             dtype=np.int32)
+            fill(array, default)
+            glyph = [0, 0, array.shape[1]-1, array.shape[0]-1]  # Translate shape to be in the corner of the update canvas
+            geometry.bressenham(array, glyph, val)
+
+        return array
 
 
 # ---------------------- Shaders and related utilities --------------------

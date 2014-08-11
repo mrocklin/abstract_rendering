@@ -45,6 +45,28 @@ class Glyphset(object):
             # TODO: Setup the shaper utilities to go directly to fortran order
             return np.array(self.shaper(self._points), order="F")
 
+    def project(viewxform):
+        """Project the points found in the glyphset according to the view transform.
+
+        viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
+        returns a new new glyphset with projected points and associated info values
+        """
+        points = glyphs.points()
+        out = np.empty_like(points, dtype=np.int32)
+        _projectRects(viewxform, points, out)
+
+        # Ensure visilibity, make sure w/h are always at least one
+        # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
+        for i in xrange(0, out.shape[0]):
+            if out[i, 0] == out[i, 2]:
+                out[i, 2] += 1
+            if out[i, 1] == out[i, 3]:
+                out[i, 3] += 1
+
+        return glyphset.Glyphset(out, glyphs.data(),
+                                 glyphset.Literals(glyphs.shaper.code))
+
+
     def data(self):
         return self._data
 
@@ -150,12 +172,13 @@ def const(v):
     return f
 
 
-def idx(i):
+def item(i):
     """
-    Create a function that expects an indexable thing
-    and returns a value at the passed index
+    Get items out of a collection.  
+    Suiteable for use with numerically indexed (i.e., array)
+    or object-indexed (i.e., dictionary) sources.
 
-    * i -- The index that will be used
+    * i -- The item parameter that will be used
     """
     def f(a):
         return a[i]
