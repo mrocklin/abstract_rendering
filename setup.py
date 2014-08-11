@@ -145,5 +145,5 @@ setup(name='abstract_rendering',
               ['abstract_rendering/cntr.c'],
               include_dirs=[numpy_include_dir],
               define_macros=[('NUMPY', None)],
-              extra_compile_args=['-O3', '-Wall', '-march=native', '-fno-rtti', '-fno-exceptions', '-fPIC'])
+              extra_compile_args=['-O3', '-Wall', '-fno-rtti', '-fno-exceptions', '-fPIC'])
           ])
