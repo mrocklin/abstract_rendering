@@ -76,23 +76,18 @@ class ShaperTests(unittest.TestCase):
         self.assertEquals(f(["ABCDEF"]), [["C", "E", 0, 0]])
 
 
-class GlyphsetTests(unittest.TestCase):
-    _glyphset = None
-
+class GlyphsetTests(object):
     def test_bounds(self):
-        if not self._glyphset: return
         self.assertTrue(np.array_equal(self._glyphset.bounds(), self._bounds))
 
     def test_points(self):
-        if not self._glyphset: return
         self.assertTrue(np.array_equal(self._glyphset.points(), self._points))
 
     def test_data(self):
-        if not self._glyphset: return
         self.assertEquals(self._glyphset.data(), self._data)
 
 
-class ArrayGlyphset(GlyphsetTests):
+class ArrayGlyphset(GlyphsetTests, unittest.TestCase):
     def setUp(self):
         self._data = [1, 2, 3, 4, 5, 6]
         points = np.array([[0, 0], [1, 1], [.5, .5]])
@@ -101,7 +96,7 @@ class ArrayGlyphset(GlyphsetTests):
         self._bounds = [0.0, 0.0, 1.0, 1.0]
 
 
-class ColumnGlyphset(GlyphsetTests):
+class ColumnGlyphset(GlyphsetTests, unittest.TestCase):
     def setUp(self):
         self._data = [1, 2, 3, 4, 5, 6]
         points = [[0, 1, .5], [0, 1, .5]]

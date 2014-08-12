@@ -4,7 +4,10 @@ import numpy as np
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
 
-
+# TODO: Priveledges names be problematic.  Right now __x, __y, __info are used. 
+#       Should probably do something gensym(<root>, <exclude_names>).  Where
+#       gensym will return something based on <root> and not in <exclude_names>.
+#       Then store those names in glyphset
 class Glyphset(glyphset.Glyphset):
     def __init__(self, table, xcol, ycol, valcol, vt=(0, 0, 1, 1)):
         self._table = table
