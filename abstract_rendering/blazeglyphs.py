@@ -14,8 +14,8 @@ class Glyphset(glyphset.Glyphset):
         self.vt = vt
         self.shaper = glyphset.ToPoint(glyphset.item(xcol), glyphset.item(ycol))
         self.table = blz.merge(table,
-                               ((table[xcol] + vt[0]) * vt[2]).label('__x'),
-                               ((table[ycol] + vt[1]) * vt[3]).label('__y'))
+                               ((table[xcol] * vt[2]) + vt[0]).label('__x'),
+                               ((table[ycol] * vt[3]) + vt[1]).label('__y'))
 
 
     def points(self):
@@ -25,10 +25,10 @@ class Glyphset(glyphset.Glyphset):
         return self.table[self.valcol]
 
     def project(self, vt):
-        nvt = (self.vt[0]+self.vt[0],
-               self.vt[1]+self.vt[1],
-               self.vt[2]*self.vt[2],
-               self.vt[3]*self.vt[3])
+        nvt = (self.vt[0]+vt[0],
+               self.vt[1]+vt[1],
+               self.vt[2]*vt[2],
+               self.vt[3]*vt[3])
         return Glyphset(self._table, self.xcol, self.ycol, self.valcol, vt=nvt)
 
     def bounds(self):
@@ -45,9 +45,8 @@ class Count(ar.Aggregator):
 
     def aggregate(self, glyphset, screen):
         points = glyphset.table
-
         sparse = blz.by(points,
-                        points[['x', 'y']],
+                        points[['__x', '__y']],
                         points[glyphset.valcol].count())
         sparse = blz.into(np.ndarray, sparse)
         sparse = sparse.astype(np.int32) #HACK: Having problems getting int32
@@ -66,15 +65,12 @@ class Sum(ar.Aggregator):
     "Blaze sepcific implementation of the sum aggregator"
 
     def aggregate(self, glyphset, screen):
-        points = blz.merge(blz.floor((glyphset.table[glyphset.xcol] * glyphset.vt[0]) + glyphset.vt[2]).label('x'),
-                           blz.floor((glyphset.table[glyphset.ycol] * glyphset.vt[1]) + glyphset.vt[3]).label('y'),
-                           glyphset.table[glyphset.valcol])
-
+        points = glyphset.table
         sparse = blz.by(points,
                         points[['__x', '__y']],
-                        points[glyphset.valcol].count().label('agg'))
-        sparse = into(np.ndarray, sparse)
-        sparse = sparse.astype(np.int32)
+                        points[glyphset.valcol].sum())
+        sparse = blz.into(np.ndarray, sparse)
+        sparse = sparse.astype(np.int32) #HACK: Having problems getting int32
 
         dense = np.empty((sparse[:, 0].max() + 1, sparse[:, 1].max() + 1), dtype=np.int64)
         dense[sparse[:, 0], sparse[:, 1]] = sparse[:, 2]
