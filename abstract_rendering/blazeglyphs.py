@@ -12,11 +12,11 @@ class Glyphset(glyphset.Glyphset):
         self.ycol = ycol
         self.valcol = valcol
         self.vt = vt
-        self.shaper = glyphset.ToPoint(glyphset.item(xcol), glyphset.item(ycol))
+        self.shaper = glyphset.ToPoint(glyphset.item(xcol),
+                                       glyphset.item(ycol))
         self.table = blz.merge(table,
                                ((table[xcol] * vt[2]) + vt[0]).label('__x'),
                                ((table[ycol] * vt[3]) + vt[1]).label('__y'))
-
 
     def points(self):
         return self.table[self.xcol, self.ycol]
@@ -36,7 +36,6 @@ class Glyphset(glyphset.Glyphset):
         xmin = blz.compute(self.table['__x'].min())
         ymax = blz.compute(self.table['__y'].max())
         ymin = blz.compute(self.table['__y'].min())
-       
         return (xmin, ymin, xmax-xmin, ymax-ymin)
 
 
@@ -48,37 +47,74 @@ class Count(ar.Aggregator):
         sparse = blz.by(points,
                         points[['__x', '__y']],
                         points[glyphset.valcol].count())
-        sparse = blz.into(np.ndarray, sparse)
-        sparse = sparse.astype(np.int32) #HACK: Having problems getting int32
-
-        dense = np.empty((sparse[:, 0].max() + 1, sparse[:, 1].max() + 1), dtype=np.int64)
-        dense[sparse[:, 0], sparse[:, 1]] = sparse[:, 2]
-        return dense
+        return to_numpy(sparse)
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
-
-
 
 
 class Sum(ar.Aggregator):
     "Blaze sepcific implementation of the sum aggregator"
 
     def aggregate(self, glyphset, info, screen):
-        #TODO: Handle sum.  Generate a new synthetic column based with info(valcol) and sum it
+        # TODO: Handle info.  Generate a new synthetic column based with info(valcol) and sum it
         points = glyphset.table
         sparse = blz.by(points,
                         points[['__x', '__y']],
                         points[glyphset.valcol].sum())
-        sparse = blz.into(np.ndarray, sparse)
-        sparse = sparse.astype(np.int32) #HACK: Having problems getting int32
+        return to_numpy(sparse)
 
-        dense = np.empty((sparse[:, 0].max() + 1, sparse[:, 1].max() + 1), dtype=np.int64)
-        dense[sparse[:, 0], sparse[:, 1]] = sparse[:, 2]
-        return dense
-    
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
+
+
+class CountCategories(ar.Aggregator):
+    def __init__(self, info):
+        self.infotype = info
+        super(ar.Aggregator, self).__init__()
+
+    def aggregate(self, glyphset, info, screen):
+        points = glyphset.table
+
+        schema = "{__info: %s}" % self.infotype
+        infos = points[glyphset.valcol].map(info, schema=schema)
+        cats = infos.distinct()
+
+        data = blz.merge(points, infos)
+        sparse = blz.by(data,
+                        data[['__x', '__y', '__info']],
+                        data[glyphset.valcol].count())
+
+        items = []
+        for cat in blz.compute(cats):
+            subset = sparse[sparse['__info'] == cat]
+            items.append(to_numpy(subset, screen))
+        
+        rslt = np.dstack(items)
+        import pdb; pdb.set_trace()
+        return rslt
+
+    def rollup(self, *vals):
+        """NOTE: Assumes co-registration of categories..."""
+        return reduce(lambda x, y: x+y,  vals)
+
+
+def to_numpy(sparse, screen=None):
+    """
+    Convert a blaze table to a numpy arary.
+    Assumes table schema format is [x,y,val]
+
+    TODO: Add a check if passed values are in screen range when screen is provided
+    """
+    sparse = blz.into(np.ndarray, sparse)
+    sparse = sparse.astype(np.int32)  # HACK: Having problems getting int32
+
+    if not screen:
+        screen = (sparse[:, 0].max() + 1, sparse[:, 1].max() + 1)
+
+    dense = np.zeros(screen, dtype=np.int64)
+    dense[sparse[:, 1], sparse[:, 0]] = sparse[:, -1]
+    return dense
 
 
 def load_csv(file, xc, yc, vc, **kwargs):

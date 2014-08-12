@@ -99,9 +99,7 @@ class GlyphAggregator(Aggregator):
         (width, height) = screen
 
         # TODO: vectorize
-        infos = [info(point, data)
-                 for point, data
-                 in zip(glyphset.points(), glyphset.data())]
+        infos = [info(data) for data in glyphset.data()]
         aggregates = self.allocate(glyphset, screen)
         for idx, points in enumerate(glyphset.points()):
             self.combine(aggregates,
@@ -269,8 +267,8 @@ def zoom_fit(screen, bounds, balanced=True):
     """
     (sw, sh) = screen
     (gx, gy, gw, gh) = bounds
-    x_scale = gw/float(sw)
-    y_scale = gh/float(sh)
+    x_scale = gw/float(sw-1)   # max indexable range is 0 to sw-1
+    y_scale = gh/float(sh-1)
     if (balanced):
         x_scale = max(x_scale, y_scale)
         y_scale = x_scale

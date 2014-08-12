@@ -48,11 +48,12 @@ def _create_plot_component():
 
     with Timer("Abstract-Render") as arTimer:   
 #      image = core.render(glyphs, 
-#                        infos.val(),
-#                        categories.CountCategories(), 
-#                        categories.HDAlpha([red, blue]),
-#                        screen,
-#                        ivt)
+#                          infos.val(),
+#                          #categories.CountCategories(), 
+#                          blaze.CountCategories("int32"),
+#                          categories.HDAlpha([red, blue]),
+#                          screen,
+#                          ivt)
       image = core.render(glyphs, 
                         infos.valAt(4,0),
                         #numeric.Count(),

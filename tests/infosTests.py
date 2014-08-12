@@ -9,11 +9,12 @@ class Const(unittest.TestCase):
         info = infos.const(3)
 
         self.assertTrue(callable(info))
-        self.assertEqual(3, info(3, 3))
-        self.assertEqual(3, info(None, 23))
-        self.assertEqual(3, info("", None))
-        self.assertEqual(3, info([2, 4, 3], []))
-        self.assertEqual(3, info(object(), self))
+        self.assertEqual(3, info(3))
+        self.assertEqual(3, info(23))
+        self.assertEqual(3, info(None))
+        self.assertEqual(3, info([]))
+        self.assertEqual(3, info(object()))
+        self.assertEqual(3, info(self))
 
 
 class Val(unittest.TestCase):
@@ -21,9 +22,9 @@ class Val(unittest.TestCase):
         info = infos.val(15)
 
         self.assertTrue(callable(info))
-        self.assertEqual(3, info(0, 3))
-        self.assertEqual(0, info(3, 0))
-        self.assertEqual(15, info(3, None))
+        self.assertEqual(3, info(3))
+        self.assertEqual(0, info(0))
+        self.assertEqual(15, info(None))
 
 
 class ValAt(unittest.TestCase):
@@ -31,11 +32,9 @@ class ValAt(unittest.TestCase):
         info = infos.valAt(3, "Nothing")
 
         self.assertTrue(callable(info))
-        self.assertEqual(3, info(None, [0, 1, 2, 3]))
-        self.assertEqual("three", info(None, ["zero", "one", "two", "three"]))
-        self.assertEqual("Nothing", info(None, None))
-        self.assertEqual("Nothing", info(None, []))
-        self.assertEqual("Nothing", info(None, [1, 2]))
+        self.assertEqual(3, info([0, 1, 2, 3]))
+        self.assertEqual("three", info(["zero", "one", "two", "three"]))
+        self.assertEqual("Nothing", info(None))
 
 
 class Key(unittest.TestCase):
@@ -43,8 +42,8 @@ class Key(unittest.TestCase):
         info = infos.key("val", "seven")
 
         self.assertTrue(callable(info))
-        self.assertEqual(3, info(None, {"val": 3, "other": 6}))
-        self.assertEqual("seven", info(None, {"value": 3, "other": 6}))
+        self.assertEqual(3, info({"val": 3, "other": 6}))
+        self.assertEqual("seven", info({"value": 3, "other": 6}))
 
 
 class Attribute(unittest.TestCase):
@@ -61,8 +60,8 @@ class Attribute(unittest.TestCase):
         info = infos.attribute("val", "seven")
 
         self.assertTrue(callable(info))
-        self.assertEqual(13, info(None, self.Has()))
-        self.assertEqual("seven", info(None, self.HasNot()))
+        self.assertEqual(13, info(self.Has()))
+        self.assertEqual("seven", info(self.HasNot()))
 
 
 if __name__ == '__main__':

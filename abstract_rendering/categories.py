@@ -22,7 +22,6 @@ class CountCategories(core.GlyphAggregator):
     call to allocate.
 
     TODO: This seems convoluted...is there a better way?
-
     """
     out_type = np.int32
     identity = np.asarray([0])
@@ -31,6 +30,7 @@ class CountCategories(core.GlyphAggregator):
     def allocate(self, glyphset, screen):
         """Allocates one array slice for each unique info passed.
            Output array shape is (#cats, height, width).
+
         """
         (width, height) = screen
         self.cats = np.unique(glyphset.data())
