@@ -43,7 +43,7 @@ class Glyphset(glyphset.Glyphset):
 class Count(ar.Aggregator):
     "Blaze sepcific implementation of the count aggregator"
 
-    def aggregate(self, glyphset, screen):
+    def aggregate(self, glyphset, info, screen):
         points = glyphset.table
         sparse = blz.by(points,
                         points[['__x', '__y']],
@@ -64,7 +64,8 @@ class Count(ar.Aggregator):
 class Sum(ar.Aggregator):
     "Blaze sepcific implementation of the sum aggregator"
 
-    def aggregate(self, glyphset, screen):
+    def aggregate(self, glyphset, info, screen):
+        #TODO: Handle sum.  Generate a new synthetic column based with info(valcol) and sum it
         points = glyphset.table
         sparse = blz.by(points,
                         points[['__x', '__y']],

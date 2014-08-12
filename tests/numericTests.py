@@ -11,7 +11,7 @@ class CountTests(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Count()
 
-        init = op.allocate(10, 10, None, None)
+        init = op.allocate(None, (10, 10))
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 
@@ -63,7 +63,7 @@ class SumTests(unittest.TestCase):
     def test_allocate(self):
         op = numeric.Sum()
 
-        init = op.allocate(10, 10, None, None)
+        init = op.allocate(None, (10, 10))
         self.assertEquals(init.shape, (10, 10))
         self.assertTrue(np.array_equal(init, np.zeros((10, 10))))
 

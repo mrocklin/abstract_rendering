@@ -4,32 +4,34 @@ import math
 
 
 # ----------- Aggregators -----------
-class Count(core.Aggregator):
+class Count(core.GlyphAggregator):
     """Count the number of items that fall into a particular grid element."""
     out_type = np.int32
     identity = 0
 
-    def allocate(self, width, height, glyphset, infos):
+    def allocate(self, glyphset, screen):
+        (width, height) = screen
         return np.zeros((height, width), dtype=self.out_type)
 
     def combine(self, existing, glyph, shapecode, val):
-        update = core.glyphAggregates(glyph, shapecode, 1, self.identity)
+        update = self.glyphAggregates(glyph, shapecode, 1, self.identity)
         existing[glyph[1]:glyph[3], glyph[0]:glyph[2]] += update
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
 
 
-class Sum(core.Aggregator):
+class Sum(core.GlyphAggregator):
     """Count the number of items that fall into a particular grid element."""
     out_type = np.int32
     identity = 0
 
-    def allocate(self, width, height, glyphset, infos):
+    def allocate(self, glyphset, screen):
+        (width, height) = screen
         return np.zeros((height, width), dtype=self.out_type)
 
     def combine(self, existing, glyph, shapecode, val):
-        update = core.glyphAggregates(glyph, shapecode, val, self.identity)
+        update = self.glyphAggregates(glyph, shapecode, val, self.identity)
         existing[glyph[1]:glyph[3], glyph[0]:glyph[2]] += update
 
     def rollup(self, *vals):

@@ -36,11 +36,10 @@ def _create_plot_component():
     white = core.Color(255,255,255,255)
     black = core.Color(0,0,0,255)
     
-    shape = glyphset.ShapeCodes.RECT
-    #glyphs = core.load_csv("../data/checkerboard.csv", 2, 0, 1, 3,1,1, shape)
-    glyphs = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, shape)
-    #glyphs = core.load_csv("../data/sourceforge.csv", 1, 1, 2, -1,.1,.1, shape)
-    
+    shape = glyphset.ShapeCodes.POINT
+    #glyphs = glyphset.load_csv("../data/checkerboard.csv", 2, 0, 1, 3,1,1, shape)
+    #glyphs = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, shape)
+    #glyphs = glyphset.load_csv("../data/sourceforge.csv", 1, 1, 2, -1,.1,.1, shape)
     glyphs = blaze.load_csv("../data/circlepoints.csv", "x", "y", "series", 
                             schema="{r:float32, theta:float32, x:float32, y:float32, series:int32}")
 

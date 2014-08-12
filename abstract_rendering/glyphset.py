@@ -1,5 +1,6 @@
 import numpy as np
 import re
+from fast_project import _projectRects
 
 
 def enum(**enums): return type('Enum', (), enums)
@@ -8,14 +9,15 @@ ShapeCodes = enum(POINT=0, LINE=1, RECT=2)
 
 
 class Glyphset(object):
-    """shaper + shape-params + associated data ==> Glyphset
+    """
+    shaper + shape-params + associated data ==> Glyphset
+    This reference implementation uses numpy arrays for the backing store.
 
-       fields:
+    fields:
        _points : Points held by this glyphset
        _data : Data associated with the points (basis for 'info' values).
-               _points[x] should associate with data[x]
        shapecode: Shapecode that tells how to interpret _points
-
+       Note: _points[x] should associate with data[x]
     """
     _points = None
     _data = None
@@ -45,13 +47,13 @@ class Glyphset(object):
             # TODO: Setup the shaper utilities to go directly to fortran order
             return np.array(self.shaper(self._points), order="F")
 
-    def project(viewxform):
+    def project(self, viewxform):
         """Project the points found in the glyphset according to the view transform.
 
         viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
         returns a new new glyphset with projected points and associated info values
         """
-        points = glyphs.points()
+        points = self.points()
         out = np.empty_like(points, dtype=np.int32)
         _projectRects(viewxform, points, out)
 
@@ -63,8 +65,7 @@ class Glyphset(object):
             if out[i, 1] == out[i, 3]:
                 out[i, 3] += 1
 
-        return glyphset.Glyphset(out, glyphs.data(),
-                                 glyphset.Literals(glyphs.shaper.code))
+        return Glyphset(out, self.data(), Literals(self.shaper.code))
 
 
     def data(self):

@@ -3,7 +3,6 @@ execution and the base clases for shared data representations.
 """
 
 import numpy as np
-from fast_project import _projectRects
 import geometry
 import glyphset
 
@@ -21,7 +20,7 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     * vt -- View transform (converts canvas to pixels)
     """
     projected = glyphs.project(vt)
-    aggregates = aggregator.aggregate(projected, screen)
+    aggregates = aggregator.aggregate(projected, info, screen)
     # TODO: Add shader specialization here
     return shader.shade(aggregates)
 
@@ -31,11 +30,17 @@ class Aggregator(object):
     out_type = None
     in_type = None
     identity = None
-    
-    def aggregate(self, glyphset, screen):
-        "Given a glyphset, produce a of set aggregates for the given screen size."
-        pass
 
+    def aggregate(self, glyphset, info, screen):
+        """
+        Produce a set of aggregates
+
+        glyphset -- glyphs to process
+        screen -- (width, height) of the output grid
+        info -- info function to invoke
+        """
+
+        raise NotImplementedError()
 
     def rollup(self, *vals):
         """
@@ -43,10 +48,33 @@ class Aggregator(object):
 
         * vals - list of numpy arrays with type out_type
         """
-        pass
+        raise NotImplementedError()
 
 
 class GlyphAggregator(Aggregator):
+    """
+    Aggregator tha tworks on one glyph at a time.
+
+    Aggregators need to eventually process all glyphs.
+    This class provides on workflow for realzing that.
+    Each glyph is turned into its own set of aggregates,
+    then combine dinto a larger set of aggregates for the
+    whole glyphset.
+
+    High-level overview of the control flow:
+        * 'allocate' is used to make an empty set of aggregates
+          for the whole glyphset
+        * 'aggregate' calls 'combine' to include a single glyph
+          into that allocated set of aggregates.
+        * 'aggregate' repeats until all glyphs have been processed
+        * 'glyphAggregates' is a utility for combine
+          to convert a glyph into a set of aggregates.  Most instances
+          of 'combine' call 'glyphAggregates' though it is not always
+          required
+
+    Sub-classes need to implement allocate and combine.
+    """
+
     def allocate(self, glyphset, screen):
         """
         Create an array suitable for processing the passed dataset
@@ -54,11 +82,9 @@ class GlyphAggregator(Aggregator):
 
         * glyphset - The points that will be processed (already projected)
         * screen -- The size of the bin-grid to produce
-
-        TODO: Is glyphset needed?  infos is used by categories, but I don't think glyphset is used anywhere right now.
         """
-        pass
-    
+        raise NotImplementedError()
+
     def combine(self, existing, points, shapecode, val):
         """Add a new point to an existing set of aggregates.
 
@@ -67,23 +93,22 @@ class GlyphAggregator(Aggregator):
         * shapecode - Code that determines how points are interpreted
         * val -- Info value associated with the current set of points
         """
-        pass
+        raise NotImplementedError()
 
-    def aggregate(self, glyphset, screen):
+    def aggregate(self, glyphset, info, screen):
         (width, height) = screen
 
-        # TODO: vectorize 
+        # TODO: vectorize
         infos = [info(point, data)
                  for point, data
-                 in zip(glyphs.points(), glyphs.data())]
-        aggregates = self.allocate(width, height, glyphs, glyphs.infos)
-        for idx, points in enumerate(glyphs.points()):
+                 in zip(glyphset.points(), glyphset.data())]
+        aggregates = self.allocate(glyphset, screen)
+        for idx, points in enumerate(glyphset.points()):
             self.combine(aggregates,
-                               points,
-                               glyphs.shaper.code,
-                               infos[idx])
+                         points,
+                         glyphset.shaper.code,
+                         infos[idx])
         return aggregates
-
 
     def glyphAggregates(self, glyph, shapeCode, val, default):
         """Create a set of aggregates for a single glyph. The set of aggregates will be
@@ -170,6 +195,7 @@ class CellShader(Shader):
         """Execute shading."""
         return self.shade(grid)
 
+
 class Seq(Shader):
     "Shader that does a sequence of shaders."
 
@@ -197,7 +223,7 @@ class SequentialShader(Shader):
     def _pre(self, grid):
         "Executed exactly once before pixelfunc is called on any cell. "
         pass
-    
+
     def __call__(self, grid):
         """Execute shading."""
         return self.shade(grid)

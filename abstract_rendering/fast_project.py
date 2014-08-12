@@ -38,7 +38,6 @@ try:
     _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform_libdispatch.so'))
     _type_lib(_lib_dispatch)
 except OSError:
-    print ("no libdispatch version found")
     _lib_dispatch = _lib
 
 mk_buff = ctypes.pythonapi.PyBuffer_FromMemory
