@@ -180,7 +180,11 @@ class Shader(object):
 
 
 class ShapeShader(Shader):
-    """Convert a grid into a set of shapes."""
+    "Convert a grid into a set of shapes (instead of another grid)."
+
+    def fuse(self, grid):
+        "Convert aggregates grid into geometry"
+        raise NotImplementedError
 
     def __call__(self, grid):
         return self.fuse(grid)
@@ -201,6 +205,7 @@ class CellShader(Shader):
     def __call__(self, grid):
         """Execute shading."""
         return self.shade(grid)
+
 
 class Seq(Shader):
     "Shader that does a sequence of shaders."
@@ -229,7 +234,7 @@ class SequentialShader(Shader):
     def _pre(self, grid):
         "Executed exactly once before pixelfunc is called on any cell. "
         pass
-    
+
     def __call__(self, grid):
         """Execute shading."""
         return self.shade(grid)
