@@ -99,8 +99,8 @@ class GlyphAggregator(Aggregator):
         # TODO: vectorize pretty much this whole method...
         (width, height) = screen
 
-        # co-iterating on number of points in case glyphset.data() is a non-length-carrying placeholder 
-        # TODO: Should the default placeholder carry length? 
+        # co-iterating on number of points in case glyphset.data() is a non-length-carrying placeholder
+        # TODO: Should the default placeholder carry length?
         infos = [info(data) for (data, _) in zip(glyphset.data(), xrange(len(glyphset.points())))]
         aggregates = self.allocate(glyphset, screen)
         for idx, points in enumerate(glyphset.points()):
@@ -166,9 +166,10 @@ class Shader(object):
 
 
 class ShapeShader(Shader):
-    """Convert a grid into a set of shapes."""
+    "Convert a grid into a set of shapes (instead of another grid)."
 
     def fuse(self, grid):
+        "Convert aggregates grid into geometry"
         raise NotImplementedError
 
     def __call__(self, grid):
@@ -194,8 +195,6 @@ class CellShader(Shader):
     def __call__(self, grid):
         """Execute shading (by default)."""
         return self.shade(grid)
-
-
 
 
 class Seq(Shader):
