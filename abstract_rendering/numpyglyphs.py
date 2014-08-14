@@ -5,15 +5,11 @@ import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
 
 
-def is_identity_transform(vt):
-    return vt == (0, 0, 1, 1)
-
-
 class Glyphset(glyphset.Glyphset):
     # TODO: Default data is list of None (?)
     def __init__(self, points, data, vt=(0, 0, 1, 1)):
         self._table = points
-        self.data = data
+        self._data = data
         self.vt = vt
         self.shaper = glyphset.ToPoint(glyphset.idx(0), glyphset.idx(1))
 
@@ -24,7 +20,7 @@ class Glyphset(glyphset.Glyphset):
             self.table = points
 
     def data(self):
-        return self.data
+        return self._data
 
     def project(self, vt):
         """
@@ -37,7 +33,7 @@ class Glyphset(glyphset.Glyphset):
                self.vt[1]+vt[1],
                self.vt[2]*vt[2],
                self.vt[3]*vt[3])
-        return Glyphset(self._table, nvt)
+        return Glyphset(self._table, self._data, nvt)
 
     def bounds(self):
         xmax = self.table[0].max()
@@ -60,14 +56,21 @@ class PointCount(ar.Aggregator):
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.table
-        dims = screen + np.unique(glyphset.data()),
-        data = np.hstac([points, map(list, glyphset.data())])
+        cats = np.unique(glyphset.data())
+        mapping = dict(zip(cats, xrange(len(cats))))
+        coded = map(lambda n: mapping[n], glyphset.data())
+        dims = screen + (len(cats),)
+        data = np.vstack([points[:, 0:2].T, [coded]]).T
         dense = np.histogramdd(data, dims)
         return dense[0]
 
     def rollup(self, *vals):
         """NOTE: Assumes co-registration of categories..."""
         return reduce(lambda x, y: x+y,  vals)
+
+
+def is_identity_transform(vt):
+    return vt == (0, 0, 1, 1)
 
 
 def load_csv(filename, skip, xc, yc, vc):
@@ -79,7 +82,7 @@ def load_csv(filename, skip, xc, yc, vc):
     """
     import re
     source = open(filename, 'r')
-    glyphs = []
+    points = []
     data = []
 
     for i in range(0, skip):
@@ -91,11 +94,11 @@ def load_csv(filename, skip, xc, yc, vc):
         y = float(line[yc].strip())
         v = float(line[vc].strip()) if vc >= 0 else 1
         g = [x, y, 0, 0]
-        glyphs.append(g)
+        points.append(g)
         data.append(v)
 
     source.close()
-    return Glyphset(np.array(glyphs), np.array(data))
+    return Glyphset(np.array(points, order="F"), np.array(data))
 
 
 def load_hdf(filename, node, xc, yc, vc=-1):
@@ -103,8 +106,12 @@ def load_hdf(filename, node, xc, yc, vc=-1):
     import pandas as pd
     table = pd.read_hdf(filename, node)
     points = table[[xc, yc]]
+    a = np.array(points, order="F")
+    z = np.zeros_like(a)
+    c = np.hstack([a, z])
+
     data = table[vc] if vc >= 0 else None
 
     # Is this copy needed?  After all, projection makes a copy too...
     #    maybe the input just needs to be CLOSE to a numpy array
-    return Glyphset(np.array(points), np.array(data))
+    return Glyphset(c, np.array(data))

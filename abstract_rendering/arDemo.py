@@ -45,27 +45,28 @@ def _create_plot_component():
     #                        schema="{r:float32, theta:float32, x:float32, y:float32, series:int32}")
     #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
     #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
-    glyphs = npg.load_hdf("../data/tweets-subset.hdf", "test", "latitude", "longitude")
+    glyphs = npg.load_hdf("../data/tweets-subset.hdf", "test", "latitude", "longitude", "lang_primary")
 
-    screen = (800,800)
+    screen = (800,600)
     ivt = core.zoom_fit(screen,glyphs.bounds())
 
     with Timer("Abstract-Render") as arTimer:   
-#      image = core.render(glyphs, 
-#                          infos.val(),
-#                          #categories.CountCategories(), 
-#                          blaze.CountCategories("int32"),
-#                          categories.HDAlpha([red, blue]),
-#                          screen,
-#                          ivt)
       image = core.render(glyphs, 
-                          infos.valAt(4,0),
-                          #numeric.Count(),
-                          #blzg.Count(), 
-                          npg.PointCount(),
-                          numeric.BinarySegment(white, black, 1),
+                          infos.val(),
+                          #categories.CountCategories(), 
+                          #blaze.CountCategories("int32"),
+                          npg.PointCountCategories(),
+                          categories.HDAlpha([red, blue]),
                           screen,
                           ivt)
+#      image = core.render(glyphs, 
+#                          infos.valAt(4,0),
+#                          #numeric.Count(),
+#                          #blzg.Count(), 
+#                          npg.PointCount(),
+#                          numeric.BinarySegment(white, black, 1),
+#                          screen,
+#                          ivt)
 
     # Create a plot data object and give it this data
     pd = ArrayPlotData()
