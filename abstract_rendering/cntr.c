@@ -11,7 +11,16 @@
     was written by following the Python "Extending and Embedding"
     tutorial.
 
+  License Note: 
+   * cntr.c was part of the chaco library, licensed under 3-clause BSD.
+   * gcntr.c was part of the yorick, licensed under 3-clause BSD.
+
   $Id: cntr.c,v 1.3 2005/06/02 22:02:32 jdh2358 Exp $
+
+  Change log:
+  * Aug 2014 -- Joseph Cottam: 
+  *    Changed name of resulting module and added license notes
+  *                          
  */
 
 #include <Python.h>
