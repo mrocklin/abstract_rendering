@@ -7,44 +7,59 @@ from abstract_rendering.core import Color
 import numpy as np
 import operator
 
+class _GlyphsetShim(object):
+    def __init__(self, depth):
+        self.depth = depth
+
+    def data(self):
+        return range(self.depth)
 
 class CountCategories(unittest.TestCase):
     def test_allocate(self):
         op = categories.CountCategories()
         (width, height, depth) = (6, 3, 7)
-        out = op.allocate(width, height, None, range(depth))
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
+        out = op.allocate(glyphset, screen)
+
         expected = np.zeros((height, width, depth))
         self.assertTrue(np.array_equal(out, expected))
 
     def test_combine_points(self):
         op = categories.CountCategories()
-        cats = 3
 
-        (width, height) = (1, 1)
+        (width, height, depth) = (1, 1, 3)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
+
+        out = op.allocate(glyphset, screen)
         glyph = [0, 0, 1, 1]
-        existing = op.allocate(width, height, None, range(cats))
+        existing = op.allocate(glyphset, screen)
         op.combine(existing, glyph, ShapeCodes.POINT, 1)
 
-        expected = np.zeros((height, width, cats))
+        expected = np.zeros((height, width, depth))
         expected[0, 0, 1] = 1
         self.assertTrue(np.array_equal(existing, expected))
 
-        (width, height) = (3, 4)
+        (width, height, depth) = (3, 4, 3)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
         glyph = [2, 1, 3, 2]
-        existing = op.allocate(width, height, None, range(cats))
+        existing = op.allocate(glyphset, screen)
         op.combine(existing, glyph, ShapeCodes.POINT, 2)
 
-        expected = np.zeros((height, width, cats), dtype=np.int)
+        expected = np.zeros((height, width, depth), dtype=np.int)
         expected[1, 2, 2] = 1
         self.assertTrue(np.array_equal(existing, expected))
 
     def test_combine_rect(self):
         op = categories.CountCategories()
-        cats = 2
+        (width, height, depth) = (3, 4, 2)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
 
-        (width, height) = (3, 4)
         glyph = [0, 0, 2, 2]
-        existing = op.allocate(width, height, None, range(cats))
+        existing = op.allocate(glyphset, screen)
         op.combine(existing, glyph, ShapeCodes.RECT, 0)
 
         expected = np.array([[[1, 1, 0],
@@ -87,9 +102,11 @@ class ToCounts(unittest.TestCase):
 
         op = categories.ToCounts()
         (width, height, depth) = (4, 5, 3)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
 
         aggregator = categories.CountCategories()
-        aggs = aggregator.allocate(width, height, None, range(0, depth))
+        aggs = aggregator.allocate(glyphset, screen)
         aggs.fill(1)
         out = op.shade(aggs)
         expected = np.empty((height, width), dtype=np.int32)
@@ -116,9 +133,11 @@ class Select(unittest.TestCase):
         op1 = categories.Select(1)
         op2 = categories.Select(2)
         (width, height, depth) = (5, 4, 3)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
 
         aggregator = categories.CountCategories()
-        aggs = aggregator.allocate(width, height, None, range(0, depth))
+        aggs = aggregator.allocate(glyphset, screen)
         aggs[:, :, 0] = 1
         aggs[:, :, 1] = 2
         aggs[:, :, 2] = 3
@@ -139,8 +158,11 @@ class MinPercent(unittest.TestCase):
         op1 = categories.MinPercent(.1)
 
         (width, height, depth) = (4, 6, 4)
+        screen = (width, height)
+        glyphset = _GlyphsetShim(depth)
+
         aggregator = categories.CountCategories()
-        aggs = aggregator.allocate(width, height, None, range(0, depth))
+        aggs = aggregator.allocate(glyphset, screen)
         aggs.fill(2)
 
         above = np.empty((height, width, 4), dtype=np.uint8)

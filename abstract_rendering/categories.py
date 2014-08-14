@@ -11,7 +11,7 @@ from math import log
 
 
 # ------------ Aggregators -------------------
-class CountCategories(core.Aggregator):
+class CountCategories(core.GlyphAggregator):
     """
     Count the number of items that fall into a particular grid element.
 
@@ -22,24 +22,25 @@ class CountCategories(core.Aggregator):
     call to allocate.
 
     TODO: This seems convoluted...is there a better way?
-
     """
     out_type = np.int32
     identity = np.asarray([0])
     cats = None
 
-    def allocate(self, width, height, glyphset, infos):
+    def allocate(self, glyphset, screen):
         """Allocates one array slice for each unique info passed.
            Output array shape is (#cats, height, width).
+
         """
-        self.cats = np.unique(infos)
+        (width, height) = screen
+        self.cats = np.unique(glyphset.data())
         return np.zeros((height, width, len(self.cats)), dtype=self.out_type)
 
     def combine(self, existing, points, shapecode, val):
         entry = np.zeros(len(self.cats))
         idx = np.nonzero(self.cats == val)[0][0]
         entry[idx] = 1
-        update = core.glyphAggregates(points, shapecode, entry, self.identity)
+        update = self.glyphAggregates(points, shapecode, entry, self.identity)
         existing[points[1]:points[3], points[0]:points[2], :] \
                 += update
 
