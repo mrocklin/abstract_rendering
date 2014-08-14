@@ -14,7 +14,8 @@ import abstract_rendering.numeric as numeric
 import abstract_rendering.categories as categories
 import abstract_rendering.infos as infos
 import abstract_rendering.glyphset as glyphset
-import abstract_rendering.blazeglyphs as blaze
+import abstract_rendering.blazeglyphs as blzg
+import abstract_rendering.numpyglyphs as npg
 
 from timer import Timer
 
@@ -40,28 +41,32 @@ def _create_plot_component():
     #glyphs = glyphset.load_csv("../data/checkerboard.csv", 2, 0, 1, 3,1,1, shape)
     #glyphs = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, shape)
     #glyphs = glyphset.load_csv("../data/sourceforge.csv", 1, 1, 2, -1,.1,.1, shape)
-    glyphs = blaze.load_csv("../data/circlepoints.csv", "x", "y", "series", 
-                            schema="{r:float32, theta:float32, x:float32, y:float32, series:int32}")
+    #glyphs = blzg.load_csv("../data/circlepoints.csv", "x", "y", "series", 
+    #                        schema="{r:float32, theta:float32, x:float32, y:float32, series:int32}")
+    #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
+    #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
+    glyphs = npg.load_hdf("../data/tweets-subset.hdf", "test", "latitude", "longitude")
 
     screen = (800,800)
     ivt = core.zoom_fit(screen,glyphs.bounds())
 
     with Timer("Abstract-Render") as arTimer:   
+#      image = core.render(glyphs, 
+#                          infos.val(),
+#                          #categories.CountCategories(), 
+#                          blaze.CountCategories("int32"),
+#                          categories.HDAlpha([red, blue]),
+#                          screen,
+#                          ivt)
       image = core.render(glyphs, 
-                          infos.val(),
-                          #categories.CountCategories(), 
-                          blaze.CountCategories("int32"),
-                          categories.HDAlpha([red, blue]),
+                          infos.valAt(4,0),
+                          #numeric.Count(),
+                          #blzg.Count(), 
+                          npg.PointCount(),
+                          numeric.BinarySegment(white, black, 1),
                           screen,
                           ivt)
-#      image = core.render(glyphs, 
-#                        infos.valAt(4,0),
-#                        #numeric.Count(),
-#                        blaze.Count(), 
-#                        numeric.BinarySegment(white, black, 1),
-#                        screen,
-#                        ivt)
-#
+
     # Create a plot data object and give it this data
     pd = ArrayPlotData()
     pd.set_data("imagedata", image)

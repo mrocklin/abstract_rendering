@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import blaze as blz
 import numpy as np
 import abstract_rendering.glyphset as glyphset

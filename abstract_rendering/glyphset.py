@@ -51,7 +51,7 @@ class Glyphset(object):
         """Project the points found in the glyphset according to the view transform.
 
         viewxform -- convert canvas space to pixel space [tx,ty,sx,sy]
-        returns a new new glyphset with projected points and associated info values
+        returns a new glyphset with projected points and associated info values
         """
         points = self.points()
         out = np.empty_like(points, dtype=np.int32)
