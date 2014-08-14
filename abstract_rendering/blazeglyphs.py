@@ -15,8 +15,8 @@ class Glyphset(glyphset.Glyphset):
         self.ycol = ycol
         self.valcol = valcol
         self.vt = vt
-        self.shaper = glyphset.ToPoint(glyphset.item(xcol),
-                                       glyphset.item(ycol))
+        self.shaper = glyphset.ToPoint(glyphset.idx(xcol),
+                                       glyphset.idx(ycol))
         self.table = blz.merge(table,
                                ((table[xcol] * vt[2]) + vt[0]).label('__x'),
                                ((table[ycol] * vt[3]) + vt[1]).label('__y'))
@@ -107,13 +107,17 @@ def to_numpy(sparse, screen=None):
     Convert a blaze table to a numpy arary.
     Assumes table schema format is [x,y,val]
 
-    TODO: Add a check if passed values are in screen range when screen is provided
+    TODO: Add screen_origin so a subset of the space can sliced out easily
     """
     sparse = blz.into(np.ndarray, sparse)
     sparse = sparse.astype(np.int32)  # HACK: Having problems getting int32
 
     if not screen:
         screen = (sparse[:, 0].max() + 1, sparse[:, 1].max() + 1)
+    else:
+        #Just things that fit on the screen
+        sparse = sparse[sparse[:, 0] < screen[0]][sparse[:, 1] < screen[1]]
+
 
     dense = np.zeros(screen, dtype=np.int64)
     dense[sparse[:, 1], sparse[:, 0]] = sparse[:, -1]

@@ -22,11 +22,23 @@ class Id(core.CellShader):
 class EmptyList(object):
     """
     Utility that can be numerically indexed, but
-    always returns None (no matter what index is passed).
+    always returns None.
 
-    This is used as a stand-in for a list when doing co-iteration
-    on other lists.
+    If a no length or a negative length are passed at construction, 
+    the list will ALWAYS return None.
+
+    If a non-negative length is passsed at construction,
+    an indexed 0 <= index < length will return None.
+    Others raise an IndexError
     """
 
+    def __init__(self, length=-1):
+        self.length = length
+
     def __getitem__(self, idx):
+        if self.length < 0: return None
+
+        if idx >= self.length or idx < 0:
+            raise IndexError
+
         return None

@@ -22,7 +22,7 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     projected = glyphs.project(vt)
     aggregates = aggregator.aggregate(projected, info, screen)
     # TODO: Add shader specialization here
-    return shader.shade(aggregates)
+    return shader(aggregates)
 
 
 # -------------------------  Aggregators and related utilities ----------------
@@ -96,10 +96,12 @@ class GlyphAggregator(Aggregator):
         raise NotImplementedError()
 
     def aggregate(self, glyphset, info, screen):
+        # TODO: vectorize pretty much this whole method...
         (width, height) = screen
 
-        # TODO: vectorize
-        infos = [info(data) for data in glyphset.data()]
+        # co-iterating on number of points in case glyphset.data() is a non-length-carrying placeholder 
+        # TODO: Should the default placeholder carry length? 
+        infos = [info(data) for (data, _) in zip(glyphset.data(), xrange(len(glyphset.points())))]
         aggregates = self.allocate(glyphset, screen)
         for idx, points in enumerate(glyphset.points()):
             self.combine(aggregates,
@@ -156,13 +158,6 @@ class Shader(object):
        and accept a grid as their input.
     """
 
-    def shade(self, grid):
-        """Execute the actual data shader operation."""
-        raise NotImplementedError
-
-    def __call__(self, grid):
-        raise NotImplementedError
-
     def __add__(self, other):
         """Extend this shader by executing another transfer in sequence."""
         if (not isinstance(other, Shader)):
@@ -172,6 +167,9 @@ class Shader(object):
 
 class ShapeShader(Shader):
     """Convert a grid into a set of shapes."""
+
+    def fuse(self, grid):
+        raise NotImplementedError
 
     def __call__(self, grid):
         return self.fuse(grid)
@@ -189,9 +187,15 @@ class CellShader(Shader):
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
 
+    def shade(self, grid):
+        """Execute the actual data shader operation."""
+        raise NotImplementedError
+
     def __call__(self, grid):
-        """Execute shading."""
+        """Execute shading (by default)."""
         return self.shade(grid)
+
+
 
 
 class Seq(Shader):
@@ -199,11 +203,6 @@ class Seq(Shader):
 
     def __init__(self, *args):
         self._parts = args
-
-    def __call__(self, grid):
-        for t in self._parts:
-            grid = t(grid)
-        return grid
 
     def __add__(self, other):
         if (other is None):
@@ -213,6 +212,11 @@ class Seq(Shader):
         elif (not isinstance(other, Shader)):
             raise TypeError("Can only extend with Shaders. Received a " + str(type(other)))
         return Seq(*(self._parts + (other,)))
+
+    def __call__(self, grid):
+        for t in self._parts:
+            grid = t(grid)
+        return grid
 
 
 class SequentialShader(Shader):
@@ -267,8 +271,8 @@ def zoom_fit(screen, bounds, balanced=True):
     """
     (sw, sh) = screen
     (gx, gy, gw, gh) = bounds
-    x_scale = gw/float(sw-1)   # max indexable range is 0 to sw-1
-    y_scale = gh/float(sh-1)
+    x_scale = gw/float(sw)   # max indexable range is 0 to sw-1
+    y_scale = gh/float(sh)
     if (balanced):
         x_scale = max(x_scale, y_scale)
         y_scale = x_scale

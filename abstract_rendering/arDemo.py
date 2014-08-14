@@ -36,7 +36,7 @@ def _create_plot_component():
     white = core.Color(255,255,255,255)
     black = core.Color(0,0,0,255)
     
-    shape = glyphset.ShapeCodes.POINT
+    shape = glyphset.ShapeCodes.RECT
     #glyphs = glyphset.load_csv("../data/checkerboard.csv", 2, 0, 1, 3,1,1, shape)
     #glyphs = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, shape)
     #glyphs = glyphset.load_csv("../data/sourceforge.csv", 1, 1, 2, -1,.1,.1, shape)
@@ -47,21 +47,21 @@ def _create_plot_component():
     ivt = core.zoom_fit(screen,glyphs.bounds())
 
     with Timer("Abstract-Render") as arTimer:   
-#      image = core.render(glyphs, 
-#                          infos.val(),
-#                          #categories.CountCategories(), 
-#                          blaze.CountCategories("int32"),
-#                          categories.HDAlpha([red, blue]),
-#                          screen,
-#                          ivt)
       image = core.render(glyphs, 
-                        infos.valAt(4,0),
-                        #numeric.Count(),
-                        blaze.Count(), 
-                        numeric.BinarySegment(white, black, 1),
-                        screen,
-                        ivt)
-
+                          infos.val(),
+                          #categories.CountCategories(), 
+                          blaze.CountCategories("int32"),
+                          categories.HDAlpha([red, blue]),
+                          screen,
+                          ivt)
+#      image = core.render(glyphs, 
+#                        infos.valAt(4,0),
+#                        #numeric.Count(),
+#                        blaze.Count(), 
+#                        numeric.BinarySegment(white, black, 1),
+#                        screen,
+#                        ivt)
+#
     # Create a plot data object and give it this data
     pd = ArrayPlotData()
     pd.set_data("imagedata", image)

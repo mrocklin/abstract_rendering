@@ -180,10 +180,16 @@ def item(i):
     or object-indexed (i.e., dictionary) sources.
 
     * i -- The item parameter that will be used
+    
+    TODO: Change method name to 'item'
     """
     def f(a):
         return a[i]
     return f
+
+def idx(i):
+    "The same as item, but a common name when using numeric indexes"
+    return item(i)
 
 
 def load_csv(filename, skip, xc, yc, vc, width, height, shapecode):
