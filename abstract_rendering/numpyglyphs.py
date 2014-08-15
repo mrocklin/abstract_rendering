@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import numpy as np
+from scipy.ndimage.filters import convolve
 from fast_project import _projectRects
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
@@ -53,31 +54,46 @@ class PointCount(ar.Aggregator):
         return reduce(lambda x, y: x+y,  vals)
 
 
-class PointCountCategories(ar.Aggregator):
-    def aggregate(self, glyphset, info, screen):
-        points = glyphset.table
-        cats = np.unique(glyphset.data())
+class Spread(ar.CellShader):
+    """
+    Spreads the values out in a regular pattern.
+    * factor : How far in each direction to spread
+    """
+    def __init__(self, factor=1):
+        self.factor = factor
 
-        layers = []
-        for cat in cats:
-           subset = points[glyphset.data() == cat]
-           layer = np.histogram2d(subset[:, 0], subset[:, 1], screen)
-           layers = layers + [layer[0]]
+    def shade(self, grid):
+        kShape = (self.factor*2+1, self.factor*2+1)
+        k = np.ones(kShape)
+        out = convolve(grid, k, mode='constant', cval=0.0)
+        return out
 
-        dense = np.dstack(layers)
-        return dense
 
-    def rollup(self, *vals):
-        """NOTE: Assumes co-registration of categories..."""
-        return reduce(lambda x, y: x+y,  vals)
-
+#class PointCountCategories(ar.Aggregator):
+#    def aggregate(self, glyphset, info, screen):
+#        points = glyphset.table
+#        cats = np.unique(glyphset.data())
+#
+#        layers = []
+#        for cat in cats:
+#           subset = points[glyphset.data() == cat]
+#           layer = np.histogram2d(subset[:, 0], subset[:, 1], screen)
+#           layers = layers + [layer[0]]
+#
+#        dense = np.dstack(layers)
+#        return dense
+#
+#    def rollup(self, *vals):
+#        """NOTE: Assumes co-registration of categories..."""
+#        return reduce(lambda x, y: x+y,  vals)
+#
 
 class PointCountCategoriesH(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.table
         cats = np.unique(glyphset.data())
-        dims = screen + (len(cats),)
-        data = np.vstack([points[:, 0:2].T, glyphset.data()]).T
+        dims = screen + (len(cats+1),)
+        data = np.hstack([points[:, 0:2], glyphset.data()[:, np.newaxis]])
         dense = np.histogramdd(data, dims)
         return dense[0]
 
@@ -148,7 +164,7 @@ def load_hdf(filename, node, xc, yc, vc=None, cats=None):
         codes = dict(zip(cats, xrange(len(cats))))
         if codes:
             defcat = len(cats)
-            coded = map(lambda cat: codes.get(cat, defcat) , data)  # TODO: Remove this SEQUENTIAL op
+            coded = [codes.get(cat, defcat) for cat in data]  # TODO: Remove this SEQUENTIAL op
             coded = np.array(coded)
     else:
         coded = None

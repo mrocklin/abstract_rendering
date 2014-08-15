@@ -179,14 +179,6 @@ class ShapeShader(Shader):
 # TODO: Add specialization to Shaders....
 class CellShader(Shader):
     """Cell shaders takea  grid and produce a new grid."""
-    def makegrid(self, grid):
-        """Create an output grid.
-
-           Default implementation creates one of the same width/height
-           of the input suitable for colors (dept 4, unit8).
-        """
-        (width, height) = grid.shape[0], grid.shape[1]
-        return np.ndarray((width, height, 4), dtype=np.uint8)
 
     def shade(self, grid):
         """Execute the actual data shader operation."""
@@ -232,6 +224,16 @@ class SequentialShader(Shader):
     def cellfunc(grid, x, y):
         "Override this method. It will be called for each pixel in the outgrid."
         raise NotImplementedError
+    
+    def makegrid(self, grid):
+        """Create an output grid.
+
+           Default implementation creates one of the same width/height
+           of the input suitable for colors (dept 4, unit8).
+        """
+        (width, height) = grid.shape[0], grid.shape[1]
+        return np.ndarray((width, height, 4), dtype=np.uint8)
+
 
     def shade(self, grid):
         """Access each element in the out grid sequentially"""
