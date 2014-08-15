@@ -221,3 +221,30 @@ def load_csv(filename, skip, xc, yc, vc, width, height, shapecode):
 
     source.close()
     return Glyphset(glyphs, data, Literals(shapecode))
+
+
+def load_hdf(filename, node, xc, yc, vc, width, height, shapecode):
+    """
+    Load a node from an HDF file.
+
+    filename : HDF file to load
+    node: Path to relevant HDF table
+    xc: Name/index of the x column
+    yc: Name/index of the y column
+    vc: Name/index of the value column (if applicable)
+    cats: List of expected categories. 
+        If cats is an empty list, a coding will be automatically generated
+        Any value not on the list will be assigned category equal to list lenght
+        Ignored if vc is not supplied.
+    """
+    import pandas as pd
+    table = pd.read_hdf(filename, node)
+    x = np.array(table[xc])
+    y = np.array(table[yc])
+    w = np.array([width] * len(x))
+    h = np.array([height] * len(x))
+    points = np.vstack([x,y,w,h]).T
+    data = table[vc] if vc else ([1] * len(x))
+    print("Loaded %d items" % len(x))
+
+    return Glyphset(points, data, Literals(shapecode))

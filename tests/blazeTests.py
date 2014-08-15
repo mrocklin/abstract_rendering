@@ -3,7 +3,9 @@ from __future__ import print_function
 import unittest
 import numpy as np
 import abstract_rendering.blazeglyphs as ar_blz
-
+import abstract_rendering.glyphset as glyphset
+import abstract_rendering.core as core
+import abstract_rendering.util as util
 
 class GlyphsetTests(unittest.TestCase):
     def setUp(self):
@@ -38,7 +40,20 @@ class GlyphsetTests(unittest.TestCase):
         expected = tuple(a*b for (a,b) in zip(expected, (6, 6, 6, 6))) 
         expected = tuple(a+b for (a,b) in zip(expected, (5, 5, 0, 0))) 
         self.assertEquals(expected, sequential.bounds())
+    
+    def test_matches(self):
+        screen = (800,800)
+        ref = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, glyphset.ShapeCodes.POINT)
+        self.assertEquals(roundAll(ref.bounds()), roundAll(self._glyphset.bounds()))
 
+
+        refzoom = util.zoom_fit(screen, ref.bounds()) 
+        reszoom = util.zoom_fit(screen, self._glyphset.bounds())
+        self.assertEquals(roundAll(refzoom, 4), roundAll(reszoom, 4))
+
+
+def roundAll(ls, p=7):
+    return map(lambda n: round(n, p), ls)
 
 if __name__ == '__main__':
     unittest.main()

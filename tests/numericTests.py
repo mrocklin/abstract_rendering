@@ -3,6 +3,7 @@ from __future__ import print_function
 import unittest
 import numpy as np
 import abstract_rendering.numeric as numeric
+import abstract_rendering.util as util
 import abstract_rendering.core as core
 from abstract_rendering.glyphset import ShapeCodes
 
@@ -229,8 +230,8 @@ class SqrtTests(unittest.TestCase):
 
 class BinarySegmentTests(unittest.TestCase):
     def test(self):
-        w = core.Color(255, 255, 255, 255)
-        b = core.Color(0, 0, 0, 255)
+        w = util.Color(255, 255, 255, 255)
+        b = util.Color(0, 0, 0, 255)
         op = numeric.BinarySegment(b, w, 5)
 
         aggs = np.array([[0, 0, 0, 0, 0],
@@ -254,8 +255,8 @@ class BinarySegmentTests(unittest.TestCase):
 
 class InterpolateColorsTests(unittest.TestCase):
     def test_linear(self):
-        red = core.Color(255, 0, 0, 255)
-        white = core.Color(255, 255, 255, 255)
+        red = util.Color(255, 0, 0, 255)
+        white = util.Color(255, 255, 255, 255)
         op = numeric.InterpolateColors(white, red)
 
         aggs = np.arange(0, 256).reshape((32, 8))

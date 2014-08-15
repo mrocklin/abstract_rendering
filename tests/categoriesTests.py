@@ -3,7 +3,7 @@ from __future__ import print_function
 import unittest
 import abstract_rendering.categories as categories
 from abstract_rendering.glyphset import ShapeCodes
-from abstract_rendering.core import Color
+from abstract_rendering.util import Color
 import numpy as np
 import operator
 

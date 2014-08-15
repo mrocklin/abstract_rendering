@@ -1,7 +1,7 @@
 """ Core abstract rendering abstractions. This includes the main drivers of
 execution and the base clases for shared data representations.
 """
-
+from __future__ import print_function, division
 import numpy as np
 import geometry
 import glyphset
@@ -243,36 +243,3 @@ class SequentialShader(Shader):
                 outgrid[y, x] = self.cellfunc(grid, x, y)
 
         return outgrid
-
-
-# ------------------------------  Graphics Components ---------------
-class Color(list):
-    def __init__(self, r, g, b, a):
-        list.__init__(self, [r, g, b, a])
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
-
-        if ((r > 255 or r < 0)
-                or (g > 255 or g < 0)
-                or (b > 255 or b < 0)
-                or (a > 255 or a < 0)):
-            raise ValueError
-
-
-def zoom_fit(screen, bounds, balanced=True):
-    """What affine transform will zoom-fit the given items?
-         screen: (w,h) of the viewing region
-         bounds: (x,y,w,h) of the items to fit
-         balance: Should the x and y scales match?
-         returns: [translate x, translate y, scale x, scale y]
-    """
-    (sw, sh) = screen
-    (gx, gy, gw, gh) = bounds
-    x_scale = gw/float(sw)   # max indexable range is 0 to sw-1
-    y_scale = gh/float(sh)
-    if (balanced):
-        x_scale = max(x_scale, y_scale)
-        y_scale = x_scale
-    return [-gx/x_scale, -gy/y_scale, 1/x_scale, 1/y_scale]

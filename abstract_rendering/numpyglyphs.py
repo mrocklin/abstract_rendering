@@ -57,10 +57,27 @@ class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.table
         cats = np.unique(glyphset.data())
-        mapping = dict(zip(cats, xrange(len(cats))))
-        coded = map(lambda n: mapping[n], glyphset.data())
+
+        layers = []
+        for cat in cats:
+           subset = points[glyphset.data() == cat]
+           layer = np.histogram2d(subset[:, 0], subset[:, 1], screen)
+           layers = layers + [layer[0]]
+
+        dense = np.dstack(layers)
+        return dense
+
+    def rollup(self, *vals):
+        """NOTE: Assumes co-registration of categories..."""
+        return reduce(lambda x, y: x+y,  vals)
+
+
+class PointCountCategoriesH(ar.Aggregator):
+    def aggregate(self, glyphset, info, screen):
+        points = glyphset.table
+        cats = np.unique(glyphset.data())
         dims = screen + (len(cats),)
-        data = np.vstack([points[:, 0:2].T, [coded]]).T
+        data = np.vstack([points[:, 0:2].T, glyphset.data()]).T
         dense = np.histogramdd(data, dims)
         return dense[0]
 
@@ -101,8 +118,20 @@ def load_csv(filename, skip, xc, yc, vc):
     return Glyphset(np.array(points, order="F"), np.array(data))
 
 
-def load_hdf(filename, node, xc, yc, vc=-1):
-    "Load a node from an HDF file."
+def load_hdf(filename, node, xc, yc, vc=None, cats=None):
+    """
+    Load a node from an HDF file.
+
+    filename : HDF file to load
+    node: Path to relevant HDF table
+    xc: Name/index of the x column
+    yc: Name/index of the y column
+    vc: Name/index of the value column (if applicable)
+    cats: List of expected categories. 
+        If cats is an empty list, a coding will be automatically generated
+        Any value not on the list will be assigned category equal to list lenght
+        Ignored if vc is not supplied.
+    """
     import pandas as pd
     table = pd.read_hdf(filename, node)
     points = table[[xc, yc]]
@@ -110,8 +139,22 @@ def load_hdf(filename, node, xc, yc, vc=-1):
     z = np.zeros_like(a)
     c = np.hstack([a, z])
 
-    data = table[vc] if vc >= 0 else None
+   
+    if vc:
+        data = table[vc] 
+        data = np.array(data)
+        if cats is not None and len(cats) == 0:
+            cats = data.unique()   # returns sorted values!!
+        codes = dict(zip(cats, xrange(len(cats))))
+        if codes:
+            defcat = len(cats)
+            coded = map(lambda cat: codes.get(cat, defcat) , data)  # TODO: Remove this SEQUENTIAL op
+            coded = np.array(coded)
+    else:
+        coded = None
+
+    print("Loaded %d items" % len(c))
 
     # Is this copy needed?  After all, projection makes a copy too...
     #    maybe the input just needs to be CLOSE to a numpy array
-    return Glyphset(c, np.array(data))
+    return Glyphset(c, coded)

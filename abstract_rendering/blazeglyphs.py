@@ -94,7 +94,6 @@ class CountCategories(ar.Aggregator):
             items.append(to_numpy(subset, screen))
         
         rslt = np.dstack(items)
-        import pdb; pdb.set_trace()
         return rslt
 
     def rollup(self, *vals):
@@ -109,17 +108,19 @@ def to_numpy(sparse, screen=None):
 
     TODO: Add screen_origin so a subset of the space can sliced out easily
     """
-    sparse = blz.into(np.ndarray, sparse)
-    sparse = sparse.astype(np.int32)  # HACK: Having problems getting int32
-
     if not screen:
-        screen = (sparse[:, 0].max() + 1, sparse[:, 1].max() + 1)
+        screen = (sparse['__x'].max() + 1, sparse['__y'].max() + 1)
     else:
         #Just things that fit on the screen
-        sparse = sparse[sparse[:, 0] < screen[0]][sparse[:, 1] < screen[1]]
+        sparse = sparse[sparse['__x'] < screen[0] and sparse['__y'] < screen[1]]
+
+    coords= sparse[['__x','__y']]
 
 
-    dense = np.zeros(screen, dtype=np.int64)
+    (width, height) = screen
+    dense = np.zeros((height, width), dtype=np.int64)
+
+    # TODO: Things breka down here....
     dense[sparse[:, 1], sparse[:, 0]] = sparse[:, -1]
     return dense
 

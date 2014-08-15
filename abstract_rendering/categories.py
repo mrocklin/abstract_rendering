@@ -5,6 +5,7 @@ Categories are modeled as stakced 2D arrays.    Each category is in its
 own slice of the stack.
 """
 
+import util
 import core
 import numpy as np
 from math import log
@@ -94,9 +95,9 @@ class MinPercent(core.CellShader):
     def __init__(self,
                  cutoff,
                  cat=0,
-                 above=core.Color(228, 26, 28, 255),
-                 below=core.Color(55, 126, 184, 255),
-                 background=core.Color(255, 255, 255, 0)):
+                 above=util.Color(228, 26, 28, 255),
+                 below=util.Color(55, 126, 184, 255),
+                 background=util.Color(255, 255, 255, 0)):
 
         self.cutoff = cutoff
         self.cat = cat
@@ -119,7 +120,7 @@ class MinPercent(core.CellShader):
 
 
 class HDAlpha(core.CellShader):
-    def __init__(self, colors, background=core.Color(255, 255, 255, 255),
+    def __init__(self, colors, background=util.Color(255, 255, 255, 255),
                  alphamin=0, log=False, logbase=10):
         """
         colors -- a list of colors in cateogry-order.

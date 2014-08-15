@@ -1,4 +1,5 @@
 import core
+import util
 import numpy as np
 import math
 
@@ -119,9 +120,9 @@ class Spread(core.SequentialShader):
 
     def cellfunc(self, grid, x, y):
         (height, width) = grid.shape
-        minx = max(0, x-self.left-self.right) 
+        minx = max(0, x-self.left-self.right)
         maxx = min(x+1, width)
-        miny = max(0, y-self.up-self.down) 
+        miny = max(0, y-self.up-self.down)
         maxy = min(y+1, height)
 
         parts = grid[miny:maxy, minx:maxx]
@@ -172,7 +173,7 @@ class InterpolateColors(core.CellShader):
     def __init__(self,
                  low, high,
                  log=False,
-                 reserve=core.Color(255, 255, 255, 255),
+                 reserve=util.Color(255, 255, 255, 255),
                  empty=np.nan):
         self.low = low
         self.high = high
