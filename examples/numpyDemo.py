@@ -51,7 +51,7 @@ def _create_plot_component():
     with Timer("Abstract-Render") as arTimer:   
       image = core.render(glyphs, 
                           infos.val(),
-                          npg.PointCountCategoriesH(),
+                          npg.PointCountCategories(),
                           categories.HDAlpha([red, blue, green, purple, black], alphamin=.3),
                           screen,
                           ivt)

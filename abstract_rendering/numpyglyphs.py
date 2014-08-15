@@ -80,24 +80,24 @@ class Spread(ar.CellShader):
         return out
 
 
-#class PointCountCategories(ar.Aggregator):
-#    def aggregate(self, glyphset, info, screen):
-#        points = glyphset.table
-#        cats = np.unique(glyphset.data())
-#
-#        layers = []
-#        for cat in cats:
-#           subset = points[glyphset.data() == cat]
-#           layer = np.histogram2d(subset[:, 0], subset[:, 1], screen)
-#           layers = layers + [layer[0]]
-#
-#        dense = np.dstack(layers)
-#        return dense
-#
-#    def rollup(self, *vals):
-#        """NOTE: Assumes co-registration of categories..."""
-#        return reduce(lambda x, y: x+y,  vals)
-#
+class PointCountCategories(ar.Aggregator):
+    def aggregate(self, glyphset, info, screen):
+        points = glyphset.table
+        cats = np.unique(glyphset.data())
+
+        layers = []
+        for cat in cats:
+           subset = points[glyphset.data() == cat]
+           layer = np.histogram2d(subset[:, 1], subset[:, 0], (screen[1], screen[0]))
+           layers = layers + [layer[0]]
+
+        dense = np.dstack(layers)
+        return dense
+
+    def rollup(self, *vals):
+        """NOTE: Assumes co-registration of categories..."""
+        return reduce(lambda x, y: x+y,  vals)
+
 
 class PointCountCategoriesH(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
