@@ -57,14 +57,17 @@ class PointCount(ar.Aggregator):
 class Spread(ar.CellShader):
     """
     Spreads the values out in a regular pattern.
+    Spreads categories inside their category plane (not between planes).
+    
     * factor : How far in each direction to spread
     """
     def __init__(self, factor=1):
         self.factor = factor
 
     def shade(self, grid):
-        kShape = (self.factor*2+1, self.factor*2+1)
+        kShape = (self.factor*2+1, self.factor*2+1) + grid.shape[2:]
         k = np.ones(kShape)
+        import pdb; pdb.set_trace()
         out = convolve(grid, k, mode='constant', cval=0.0)
         return out
 

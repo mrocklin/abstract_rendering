@@ -70,7 +70,7 @@ class SpreadTests(unittest.TestCase):
                         [[0, 0, 0, 0],
                          [0, 0, 0, 0],
                          [0, 0, 1, 0],
-                         [0, 0, 0, 0]]])
+                         [0, 0, 0, 0]]]).T
         
         b = np.asarray([[[1, 1, 1, 0],
                          [1, 1, 1, 0],
@@ -79,7 +79,7 @@ class SpreadTests(unittest.TestCase):
                         [[0, 0, 0, 0],
                          [0, 1, 1, 1],
                          [0, 1, 1, 1],
-                         [0, 1, 1, 1]]])
+                         [0, 1, 1, 1]]]).T
         self.run_spread(1, a, b)
 
 
