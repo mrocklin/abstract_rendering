@@ -9,7 +9,7 @@ matrix:
     - python: "3.3"
 
 install:
-  - "conda install blaze"
+  - "pip install blaze"
   - "python setup.py install"
 
 script: 
