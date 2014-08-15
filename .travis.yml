@@ -8,6 +8,9 @@ matrix:
   allow_failures:
     - python: "3.3"
 
+before-install:
+  - "conda install blaze"
+
 install:
   - "python setup.py install"
 
