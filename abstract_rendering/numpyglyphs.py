@@ -65,10 +65,18 @@ class Spread(ar.CellShader):
         self.factor = factor
 
     def shade(self, grid):
-        kShape = (self.factor*2+1, self.factor*2+1) + grid.shape[2:]
+        kShape = (self.factor*2+1, self.factor*2+1) 
         k = np.ones(kShape)
-        import pdb; pdb.set_trace()
-        out = convolve(grid, k, mode='constant', cval=0.0)
+
+        if len(grid.shape) == 3:
+            cats = grid.shape[2]
+            levels = [convolve(grid[:,:,level], k, mode='constant', cval=0.0)
+                      for level in xrange(cats)]
+            out = np.dstack(levels)
+        else:
+            out = convolve(grid, k, mode='constant', cval=0.0)
+
+
         return out
 
 
