@@ -54,6 +54,27 @@ class PointCount(ar.Aggregator):
         return reduce(lambda x, y: x+y,  vals)
 
 
+class PointCountCategories(ar.Aggregator):
+    def aggregate(self, glyphset, info, screen):
+        points = glyphset.table
+        cats = glyphset.data().max() 
+
+        (width, height) = screen
+        dims = (height, width, cats+1) 
+
+        xs = points[:,0]
+        ys = points[:,1]
+        ranges = ((ys.min(), ys.max()), (xs.min(), xs.max()), (0, cats+1))
+
+        data = np.hstack([np.fliplr(points[:, 0:2]), glyphset.data()[:, np.newaxis]])
+        dense = np.histogramdd(data, bins=dims, range=ranges)
+        return dense[0]
+
+    def rollup(self, *vals):
+        """NOTE: Assumes co-registration of categories..."""
+        return reduce(lambda x, y: x+y,  vals)
+
+
 class Spread(ar.CellShader):
     """
     Spreads the values out in a regular pattern.
@@ -78,25 +99,14 @@ class Spread(ar.CellShader):
 
         return out
 
-class PointCountCategories(ar.Aggregator):
-    def aggregate(self, glyphset, info, screen):
-        points = glyphset.table
-        cats = glyphset.data().max() 
 
-        (width, height) = screen
-        dims = (height, width, cats+1) 
-
-        xs = points[:,0]
-        ys = points[:,1]
-        ranges = ((ys.min(), ys.max()), (xs.min(), xs.max()), (0, cats+1))
-
-        data = np.hstack([np.fliplr(points[:, 0:2]), glyphset.data()[:, np.newaxis]])
-        dense = np.histogramdd(data, bins=dims, range=ranges)
-        return dense[0]
-
-    def rollup(self, *vals):
-        """NOTE: Assumes co-registration of categories..."""
-        return reduce(lambda x, y: x+y,  vals)
+class Log10(ar.CellShader):
+    def shade(self, grid):
+        mask = (grid == 0)
+        out = np.log10(grid)
+        import pdb; pdb.set_trace()
+        out[mask] = 0
+        return out
 
 
 def is_identity_transform(vt):

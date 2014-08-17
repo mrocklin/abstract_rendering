@@ -51,7 +51,7 @@ def _create_plot_component():
       image = core.render(glyphs, 
                           infos.val(),
                           npg.PointCountCategories(),
-                          npg.Spread(3) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3),
+                          npg.Spread(3) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3, log=True),
                           screen,
                           ivt)
 #      image = core.render(glyphs, 

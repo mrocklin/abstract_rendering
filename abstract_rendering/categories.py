@@ -170,7 +170,7 @@ class HDAlpha(core.CellShader):
         if (dolog):
             base = log(base)
             maxval = log(maxval)/base
-            sums[mask] = log(sums[mask])/base
+            sums[mask] = np.log10(sums[mask])/base
 
         np.putmask(colors[:, :, 3],
                    mask,
