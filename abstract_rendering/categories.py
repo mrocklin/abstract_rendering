@@ -4,7 +4,7 @@ Tools for working with counts from multiple categories of data at once.
 Categories are modeled as stakced 2D arrays.    Each category is in its
 own slice of the stack.
 """
-
+from __future__ import print_function
 import util
 import core
 import numpy as np
@@ -129,11 +129,15 @@ class HDAlpha(core.CellShader):
         logbase -- Base to use if log is true (default is 10)
         background -- Color for empty category list (default is white)
 
+        If C categories and N colors are presented:
+            * N == C: No problems
+            * N >  C: Only the first C colors are used
+            * N <  C: The last color is replicated to make N == C
+
         TODO: Change 'colors' to a dictionary of category-to-color mapping
         TODO: mask out zero-sum regions in alpha and opaque blend
         """
-        # self.colors = dict(zip(colors.keys(), map(lambda v: v.asarray(), colors.values)))
-        self.catcolors = np.array(map(lambda v: np.array(v, dtype=np.uint8), colors))
+        self.catcolors = np.array([np.array(v, dtype=np.uint8) for v in colors])
         self.background = np.array(background, dtype=np.uint8)
         self.alphamin = alphamin
         self.log = log
@@ -143,7 +147,17 @@ class HDAlpha(core.CellShader):
         sums = ToCounts.shade(grid, dtype=np.float32)
         mask = (sums != 0)
 
-        colors = HDAlpha.opaqueblend(self.catcolors, grid, sums)
+        #Ensure category count and color count match
+        cats = grid.shape[2]
+        catcolors = self.catcolors
+        if len(catcolors) > cats:
+            catcolors = catcolors[:cats]
+        elif len(catcolors) < cats:
+            other = catcolors[-1]
+            replicated = [other] * (cats-len(catcolors))
+            catcolors = np.vstack([catcolors, replicated])
+
+        colors = HDAlpha.opaqueblend(catcolors, grid, sums)
         colors[~mask] = self.background
         HDAlpha.alpha(colors, sums, mask, self.alphamin, self.log, self.logbase)
         return colors
