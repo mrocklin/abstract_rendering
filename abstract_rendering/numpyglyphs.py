@@ -90,10 +90,10 @@ class Spread(ar.CellShader):
         k = np.ones(kShape)
 
         if len(grid.shape) == 3:
+            out = np.empty_like(grid)
             cats = grid.shape[2]
-            levels = [convolve(grid[:,:,level], k, mode='constant', cval=0.0)
-                      for level in xrange(cats)]
-            out = np.dstack(levels)
+            for cat in xrange(cats):
+                out[:, :, cat] = convolve(grid[:, :, cat], k, mode='constant', cval=0.0)
         else:
             out = convolve(grid, k, mode='constant', cval=0.0)
 
@@ -158,9 +158,8 @@ def load_hdf(filename, node, xc, yc, vc=None, cats=None):
     import pandas as pd
     table = pd.read_hdf(filename, node)
     points = table[[xc, yc]]
-    a = np.array(points, order="F")
-    z = np.zeros_like(a)
-    c = np.hstack([a, z])
+    a = np.zeros((len(points), 4), order="F")
+    a[:, :2] = points
 
    
     if vc:
@@ -176,8 +175,8 @@ def load_hdf(filename, node, xc, yc, vc=None, cats=None):
     else:
         coded = None
 
-    print("Loaded %d items" % len(c))
+    print("Loaded %d items" % len(a))
 
     # Is this copy needed?  After all, projection makes a copy too...
     #    maybe the input just needs to be CLOSE to a numpy array
-    return Glyphset(c, coded)
+    return Glyphset(a, coded)
