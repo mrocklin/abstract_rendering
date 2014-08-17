@@ -42,8 +42,7 @@ def _create_plot_component():
     #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
     glyphs = npg.load_hdf("../data/tweets-subset.hdf", 
                           "test", "latitude", "longitude", 
-                          #vc="lang_primary", cats=["***NOT A LANGUAGE***"])
-                          vc="lang_primary", cats=["English","Arabic","Turkish","Russian"])
+                          vc="lang_primary", cats=["Arabic","English","Turkish","Russian"])
 
     screen = (800,600)
     ivt = util.zoom_fit(screen,glyphs.bounds())
@@ -52,7 +51,7 @@ def _create_plot_component():
       image = core.render(glyphs, 
                           infos.val(),
                           npg.PointCountCategories(),
-                          categories.HDAlpha([red, blue, green, purple, black], alphamin=.3),
+                          npg.Spread(3) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3),
                           screen,
                           ivt)
 #      image = core.render(glyphs, 

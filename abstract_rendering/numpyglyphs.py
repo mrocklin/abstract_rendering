@@ -76,36 +76,22 @@ class Spread(ar.CellShader):
         else:
             out = convolve(grid, k, mode='constant', cval=0.0)
 
-
         return out
-
 
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.table
-        cats = np.unique(glyphset.data())
+        cats = glyphset.data().max() 
 
-        layers = []
-        for cat in cats:
-           subset = points[glyphset.data() == cat]
-           layer = np.histogram2d(subset[:, 1], subset[:, 0], (screen[1], screen[0]))
-           layers = layers + [layer[0]]
+        (width, height) = screen
+        dims = (height, width, cats+1) 
 
-        dense = np.dstack(layers)
-        return dense
+        xs = points[:,0]
+        ys = points[:,1]
+        ranges = ((ys.min(), ys.max()), (xs.min(), xs.max()), (0, cats+1))
 
-    def rollup(self, *vals):
-        """NOTE: Assumes co-registration of categories..."""
-        return reduce(lambda x, y: x+y,  vals)
-
-
-class PointCountCategoriesH(ar.Aggregator):
-    def aggregate(self, glyphset, info, screen):
-        points = glyphset.table
-        cats = np.unique(glyphset.data())
-        dims = screen + (len(cats+1),)
-        data = np.hstack([points[:, 0:2], glyphset.data()[:, np.newaxis]])
-        dense = np.histogramdd(data, dims)
+        data = np.hstack([np.fliplr(points[:, 0:2]), glyphset.data()[:, np.newaxis]])
+        dense = np.histogramdd(data, bins=dims, range=ranges)
         return dense[0]
 
     def rollup(self, *vals):
