@@ -38,11 +38,12 @@ def _create_plot_component():
     black = util.Color(0,0,0,255)
     clear = util.Color(0,0,0,0)
     
-    #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
-    #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
-    glyphs = npg.load_hdf("../data/tweets-subset.hdf", 
-                          "test", "latitude", "longitude", 
-                          vc="lang_primary", cats=["Arabic","English","Turkish","Russian"])
+    with Timer("Loeading") as arTimer:   
+        #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
+        #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
+        glyphs = npg.load_hdf("../data/tweets-subset.hdf", 
+                              "test", "latitude", "longitude", 
+                              vc="lang_primary", cats=["Arabic","English","Turkish","Russian"])
 
     screen = (800,600)
     ivt = util.zoom_fit(screen,glyphs.bounds())
@@ -51,13 +52,13 @@ def _create_plot_component():
       image = core.render(glyphs, 
                           infos.val(),
                           npg.PointCountCategories(),
-                          npg.Spread(3) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3, log=True),
+                          npg.Spread(1) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3, log=True),
                           screen,
                           ivt)
 #      image = core.render(glyphs, 
 #                          infos.valAt(4,0),
 #                          npg.PointCount(),
-#                          numeric.BinarySegment(white, black, 1),
+#                          npg.Spread(1) + numeric.BinarySegment(white, black, 1),
 #                          screen,
 #                          ivt)
 

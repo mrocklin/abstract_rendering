@@ -48,7 +48,7 @@ class PointCount(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         sparse = glyphset.table
         dense = np.histogram2d(sparse[:, 0], sparse[:, 1], screen)
-        return dense[0]
+        return dense[0].T
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -61,10 +61,10 @@ class PointCountCategories(ar.Aggregator):
 
         (width, height) = screen
         dims = (height, width, cats+1) 
-
-        xs = points[:,0]
-        ys = points[:,1]
-        ranges = ((ys.min(), ys.max()), (xs.min(), xs.max()), (0, cats+1))
+        
+        (xmin, ymin, _, _) = points.min(axis=0)
+        (xmax, ymax, _, _) = points.max(axis=0)
+        ranges = ((ymin, ymax), (xmin, xmax), (0, cats+1)) #Need cats+1 to get the breaks correct
 
         data = np.hstack([np.fliplr(points[:, 0:2]), glyphset.data()[:, np.newaxis]])
         dense = np.histogramdd(data, bins=dims, range=ranges)
@@ -104,7 +104,6 @@ class Log10(ar.CellShader):
     def shade(self, grid):
         mask = (grid == 0)
         out = np.log10(grid)
-        import pdb; pdb.set_trace()
         out[mask] = 0
         return out
 
