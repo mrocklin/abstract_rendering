@@ -9,19 +9,25 @@ import abstract_rendering.core as ar
 class Glyphset(glyphset.Glyphset):
     # TODO: Default data is list of None (?)
     def __init__(self, points, data, vt=(0, 0, 1, 1)):
-        self._table = points
+        self._points = points
         self._data = data
         self.vt = vt
         self.shaper = glyphset.ToPoint(glyphset.idx(0), glyphset.idx(1))
 
         if not is_identity_transform(vt):
-            self.table = np.empty_like(points, dtype=np.int32)
-            _projectRects(vt, points, self.table)
+            self.projected = np.empty_like(points, dtype=np.int32)
+            _projectRects(vt, points, self.projected)
+            #points must be at least 1 wide for general compatability
+            self.projected[:, 2] = self.projected[:, 0]+1
+            self.projected[:, 3] = self.projected[:, 1]+1
         else:
-            self.table = points
+            self.projected = points
 
     def data(self):
         return self._data
+
+    def points(self):
+        return self.projected
 
     def project(self, vt):
         """
@@ -34,19 +40,19 @@ class Glyphset(glyphset.Glyphset):
                self.vt[1]+vt[1],
                self.vt[2]*vt[2],
                self.vt[3]*vt[3])
-        return Glyphset(self._table, self._data, nvt)
+        return Glyphset(self._points, self._data, nvt)
 
     def bounds(self):
-        xmax = self.table[0].max()
-        xmin = self.table[0].min()
-        ymax = self.table[1].max()
-        ymin = self.table[1].min()
+        xmax = self.projected[:, 0].max()
+        xmin = self.projected[:, 0].min()
+        ymax = self.projected[:, 1].max()
+        ymin = self.projected[:, 1].min()
         return (xmin, ymin, xmax-xmin, ymax-ymin)
 
 
 class PointCount(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
-        sparse = glyphset.table
+        sparse = glyphset.points()
         dense = np.histogram2d(sparse[:, 0], sparse[:, 1], screen)
         return dense[0].T
 
@@ -56,7 +62,7 @@ class PointCount(ar.Aggregator):
 
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
-        points = glyphset.table
+        points = glyphset.points()
         cats = glyphset.data().max() 
 
         (width, height) = screen
@@ -111,6 +117,26 @@ class Log10(ar.CellShader):
 def is_identity_transform(vt):
     return vt == (0, 0, 1, 1)
 
+def code_categories(values, cats, defcat=-1):
+    """Encode the items in values as numeric indicies.
+    The index will equal the order in "cats".
+
+    * values : List of values to encode
+    * cats : List of categoires. 
+             If none, is generated from values
+    * defcat: Default category **index**.  
+              Defaults to len(cats)
+    """
+    data = np.asanyarray(values)
+    if cats is None:
+        cats = np.unique(data)   # returns sorted values!!
+    codes = dict(zip(cats, xrange(len(cats))))
+    defcat = defcat if defcat >=0 else len(cats)
+    coded = [codes.get(cat, defcat) for cat in data]  # TODO: Remove this SEQUENTIAL op
+    coded = np.array(coded)
+
+    return coded
+
 
 def load_csv(filename, skip, xc, yc, vc):
     """Turn a csv file into a glyphset.
@@ -163,14 +189,7 @@ def load_hdf(filename, node, xc, yc, vc=None, cats=None):
    
     if vc:
         data = table[vc] 
-        data = np.array(data)
-        if cats is not None and len(cats) == 0:
-            cats = data.unique()   # returns sorted values!!
-        codes = dict(zip(cats, xrange(len(cats))))
-        if codes:
-            defcat = len(cats)
-            coded = [codes.get(cat, defcat) for cat in data]  # TODO: Remove this SEQUENTIAL op
-            coded = np.array(coded)
+        coded = code_categories(data, cats)
     else:
         coded = None
 

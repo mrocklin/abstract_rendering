@@ -42,7 +42,7 @@ def _create_plot_component():
         #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
         #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
         glyphs = npg.load_hdf("../data/tweets-subset.hdf", 
-                              "test", "latitude", "longitude", 
+                              "test", "latitude", "longitude",
                               vc="lang_primary", cats=["Arabic","English","Turkish","Russian"])
 
     screen = (800,600)

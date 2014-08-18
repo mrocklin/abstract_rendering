@@ -10,6 +10,7 @@ matrix:
 
 install:
   - "pip install blaze"
+  - "pip install scipy"
   - "python setup.py install"
 
 script: 

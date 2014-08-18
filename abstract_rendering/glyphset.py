@@ -58,7 +58,7 @@ class Glyphset(object):
         _projectRects(viewxform, points, out)
 
         # Ensure visilibity, make sure w/h are always at least one
-        # TODO: There is probably a more numpy-ish way to do this...(and it might not be needed for Shapecode.POINT)
+        # TODO: There is probably a more numpy-ish way to do this...
         for i in xrange(0, out.shape[0]):
             if out[i, 0] == out[i, 2]:
                 out[i, 2] += 1
