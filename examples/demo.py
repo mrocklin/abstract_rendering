@@ -42,8 +42,8 @@ def _create_plot_component():
     #glyphs = glyphset.load_csv("../data/checkerboard.csv", 2, 0, 1, 3,1,1, shape)
     #glyphs = glyphset.load_csv("../data/circlepoints.csv", 1, 2, 3, 4,.1,.1, shape)
     #glyphs = glyphset.load_csv("../data/sourceforge.csv", 1, 1, 2, -1,.1,.1, shape)
-    #glyphs = glyphset.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON", None, .1, .1, shape)
-    glyphs = glyphset.load_hdf("../data/tweets-subset.hdf", "test", "latitude", "longitude", None, .1, .1, shape)
+    glyphs = glyphset.load_hdf("../data/CensusTracts.hdf5", "__data__", "LON", "LAT", None, .1, .1, shape)
+    #glyphs = glyphset.load_hdf("../data/tweets-subset.hdf", "test", "longitude", "latitude", None, .1, .1, shape)
 
     screen = (800,600)
     ivt = util.zoom_fit(screen,glyphs.bounds())
@@ -61,6 +61,7 @@ def _create_plot_component():
                           numeric.BinarySegment(white, black, 1),
                           screen,
                           ivt)
+    print("screen x image -- {0} x {1}".format(screen, image.shape))
 
     # Create a plot data object and give it this data
     pd = ArrayPlotData()

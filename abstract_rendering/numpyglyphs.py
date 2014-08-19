@@ -53,8 +53,8 @@ class Glyphset(glyphset.Glyphset):
 class PointCount(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         sparse = glyphset.points()
-        dense = np.histogram2d(sparse[:, 0], sparse[:, 1], screen)
-        return dense[0].T
+        dense = np.histogram2d(sparse[:, 1], sparse[:, 0], (screen[1], screen[0]))
+        return dense[0]
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -63,7 +63,9 @@ class PointCount(ar.Aggregator):
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.points()
-        cats = glyphset.data().max() 
+        coded = [info(cat) for cat in glyphset.data()]  # TODO: Remove this SEQUENTIAL op
+        coded = np.array(coded)
+        cats = coded.max()
 
         (width, height) = screen
         dims = (height, width, cats+1) 
@@ -72,7 +74,7 @@ class PointCountCategories(ar.Aggregator):
         (xmax, ymax, _, _) = points.max(axis=0)
         ranges = ((ymin, ymax), (xmin, xmax), (0, cats+1)) #Need cats+1 to get the breaks correct
 
-        data = np.hstack([np.fliplr(points[:, 0:2]), glyphset.data()[:, np.newaxis]])
+        data = np.hstack([np.fliplr(points[:, 0:2]), coded[:, np.newaxis]])
         dense = np.histogramdd(data, bins=dims, range=ranges)
         return dense[0]
 
@@ -117,31 +119,6 @@ class Log10(ar.CellShader):
 def is_identity_transform(vt):
     return vt == (0, 0, 1, 1)
 
-def code_categories(values, cats, defcat=-1):
-    """Encode the items in values as numeric indicies.
-    The index will equal the order in "cats".
-
-    * values : List of values to encode
-    * cats : List of categoires. 
-             If none, is generated from values
-    * defcat: Default category **index**.  
-              Defaults to len(cats)
-    """
-    if (isinstance(values, util.EmptyList)
-            or values is None): 
-        return util.EmptyList()
-    
-    data = np.asanyarray(values)
-    if cats is None:
-        cats = np.unique(data)   # returns sorted values!!
-    codes = dict(zip(cats, xrange(len(cats))))
-    defcat = defcat if defcat >=0 else len(cats)
-    coded = [codes.get(cat, defcat) for cat in data]  # TODO: Remove this SEQUENTIAL op
-    coded = np.array(coded)
-
-    return coded
-
-
 def load_csv(filename, skip, xc, yc, vc):
     """Turn a csv file into a glyphset.
 
@@ -170,7 +147,7 @@ def load_csv(filename, skip, xc, yc, vc):
     return Glyphset(np.array(points, order="F"), np.array(data))
 
 
-def load_hdf(filename, node, xc, yc, vc=None, cats=None):
+def load_hdf(filename, node, xc, yc, vc=None):
     """
     Load a node from an HDF file.
 
@@ -190,15 +167,8 @@ def load_hdf(filename, node, xc, yc, vc=None, cats=None):
     a = np.zeros((len(points), 4), order="F")
     a[:, :2] = points
 
-   
-    if vc:
-        data = table[vc] 
-        coded = code_categories(data, cats)
-    else:
-        coded = None
-
+  
+    data = table[vc] if vc else None
     print("Loaded %d items" % len(a))
 
-    # Is this copy needed?  After all, projection makes a copy too...
-    #    maybe the input just needs to be CLOSE to a numpy array
-    return Glyphset(a, coded)
+    return Glyphset(a, data)

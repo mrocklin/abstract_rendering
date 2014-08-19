@@ -1,7 +1,6 @@
-
-"""Each info function returns a function that takes two arguments:
-   shape and data. The 'shape' is the projected shape information.
-   The 'data' is the data package associated with that information.
+"""
+Each info function returns callable that can be used on a single
+entry in the dataset.
 """
 
 
@@ -47,3 +46,36 @@ def attribute(att, default=None):
     def f(data):
         return getattr(data, att, default)
     return f
+
+
+def encode(cats, defcat=-1):
+    """Create a function that converts values to numbers.
+    The index in the value list passed will be the code-number.
+    * cats : Values to create codes for
+    * defcat : Default category; defaults to length fo cats list
+    """
+
+    if defcat < 0:
+        defcat = len(cats)
+    codes = dict(zip(cats, xrange(len(cats))))
+
+    def f(val):
+        return codes.get(val, defcat)
+
+    return f
+
+
+def AutoEncode(object):
+    """Encoded values as numeric codes.
+    Builds up a category->code dictionary incrementally.
+    """
+
+    def __init__(self):
+        self.next_code = 0
+        self.mapping = {}
+
+    def __call__(self, val):
+        if val not in self.mapping:
+            self.mapping[val] = self.next_code
+            self.next_code = self.next_code + 1
+        return self.mapping[val]

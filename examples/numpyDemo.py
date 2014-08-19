@@ -41,18 +41,17 @@ def _create_plot_component():
     with Timer("Loeading") as arTimer:   
         #glyphs = npg.load_csv("../data/circlepoints.csv", 1, 2, 3, 4)
         #glyphs = npg.load_hdf("../data/CensusTracts.hdf5", "__data__", "LAT", "LON")
-        glyphs = npg.load_hdf("../data/tweets-subset.hdf", 
-                              "test", "latitude", "longitude",
-                              vc="lang_primary", cats=["Arabic","English","Turkish","Russian"])
+        glyphs = npg.load_hdf("../data/tweets-subset.hdf", "test", 
+                              "longitude", "latitude", vc="lang_primary")
 
     screen = (800,600)
     ivt = util.zoom_fit(screen,glyphs.bounds())
 
     with Timer("Abstract-Render") as arTimer:   
       image = core.render(glyphs, 
-                          infos.val(),
+                          infos.encode(["Arabic","English","Turkish","Russian"]),
                           npg.PointCountCategories(),
-                          npg.Spread(1) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3, log=True),
+                          npg.Spread(2) + categories.HDAlpha([red, blue, green, purple, black], alphamin=.3, log=True),
                           screen,
                           ivt)
 #      image = core.render(glyphs, 
@@ -61,6 +60,8 @@ def _create_plot_component():
 #                          npg.Spread(1) + numeric.BinarySegment(white, black, 1),
 #                          screen,
 #                          ivt)
+
+    print("screen x image -- {0} x {1}".format(screen, image.shape))
 
     # Create a plot data object and give it this data
     pd = ArrayPlotData()

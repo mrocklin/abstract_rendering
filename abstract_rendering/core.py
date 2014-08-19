@@ -22,7 +22,8 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     projected = glyphs.project(vt)
     aggregates = aggregator.aggregate(projected, info, screen)
     # TODO: Add shader specialization here
-    return shader(aggregates)
+    rslt = shader(aggregates)
+    return rslt 
 
 
 # -------------------------  Aggregators and related utilities ----------------
