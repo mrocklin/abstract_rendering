@@ -4,6 +4,7 @@ from scipy.ndimage.filters import convolve
 from fast_project import _projectRects
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
+import abstract_rendering.util as util
 
 
 class Glyphset(glyphset.Glyphset):
@@ -43,11 +44,10 @@ class Glyphset(glyphset.Glyphset):
         return Glyphset(self._points, self._data, nvt)
 
     def bounds(self):
-        xmax = self.projected[:, 0].max()
-        xmin = self.projected[:, 0].min()
-        ymax = self.projected[:, 1].max()
-        ymin = self.projected[:, 1].min()
-        return (xmin, ymin, xmax-xmin, ymax-ymin)
+        (xmax, ymax, _, _) = self.projected.max(axis=0)
+        (xmin, ymin, _, _) = self.projected.min(axis=0)
+        bounds = (xmin, ymin, xmax-xmin, ymax-ymin)
+        return bounds
 
 
 class PointCount(ar.Aggregator):
@@ -127,6 +127,10 @@ def code_categories(values, cats, defcat=-1):
     * defcat: Default category **index**.  
               Defaults to len(cats)
     """
+    if (isinstance(values, util.EmptyList)
+            or values is None): 
+        return util.EmptyList()
+    
     data = np.asanyarray(values)
     if cats is None:
         cats = np.unique(data)   # returns sorted values!!
