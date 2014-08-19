@@ -4,7 +4,6 @@ from scipy.ndimage.filters import convolve
 from fast_project import _projectRects
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
-import abstract_rendering.util as util
 
 
 class Glyphset(glyphset.Glyphset):
@@ -18,7 +17,7 @@ class Glyphset(glyphset.Glyphset):
         if not is_identity_transform(vt):
             self.projected = np.empty_like(points, dtype=np.int32)
             _projectRects(vt, points, self.projected)
-            #points must be at least 1 wide for general compatability
+            # points must be at least 1 wide for general compatability
             self.projected[:, 2] = self.projected[:, 0]+1
             self.projected[:, 3] = self.projected[:, 1]+1
         else:
@@ -68,11 +67,11 @@ class PointCountCategories(ar.Aggregator):
         cats = coded.max()
 
         (width, height) = screen
-        dims = (height, width, cats+1) 
-        
+        dims = (height, width, cats+1)
+
         (xmin, ymin, _, _) = points.min(axis=0)
         (xmax, ymax, _, _) = points.max(axis=0)
-        ranges = ((ymin, ymax), (xmin, xmax), (0, cats+1)) #Need cats+1 to get the breaks correct
+        ranges = ((ymin, ymax), (xmin, xmax), (0, cats+1))  # Need cats+1 to get the breaks correct
 
         data = np.hstack([np.fliplr(points[:, 0:2]), coded[:, np.newaxis]])
         dense = np.histogramdd(data, bins=dims, range=ranges)
@@ -87,23 +86,40 @@ class Spread(ar.CellShader):
     """
     Spreads the values out in a regular pattern.
     Spreads categories inside their category plane (not between planes).
-    
-    * factor : How far in each direction to spread
+
+    TODO: Add shape support
+
+    * factor : How wide to spread?
+    * anti_alias: Can a value be fractionally spread into a cell (default is false)
     """
-    def __init__(self, factor=1):
+    def __init__(self, factor=1, anti_alias=False):
         self.factor = factor
+        self.anti_alias = anti_alias
+
+    def make_k(self):
+        if not self.anti_alias or (self.factor % 2) == 1:
+            kShape = (self.factor+1, self.factor+1)
+            k = np.ones(kShape)
+        else:
+            kShape = (self.factor, self.factor)
+            k = np.ones(kShape)
+            k[0] = .5
+            k[:, 0] = .5
+            k[-1] = .5
+            k[:, -1] = .5
+        return k
 
     def shade(self, grid):
-        kShape = (self.factor*2+1, self.factor*2+1) 
-        k = np.ones(kShape)
+        k = self.make_k()
 
+        out_dtype = grid.dtype if not self.anti_alias else np.float64
+        out = np.empty_like(grid, dtype=out_dtype)
         if len(grid.shape) == 3:
-            out = np.empty_like(grid)
             cats = grid.shape[2]
             for cat in xrange(cats):
-                out[:, :, cat] = convolve(grid[:, :, cat], k, mode='constant', cval=0.0)
+                convolve(grid[:, :, cat], k, output=out[:, :, cat], mode='constant', cval=0.0)
         else:
-            out = convolve(grid, k, mode='constant', cval=0.0)
+            convolve(grid, k, mode='constant', cval=0.0, output=out)
 
         return out
 
@@ -118,6 +134,7 @@ class Log10(ar.CellShader):
 
 def is_identity_transform(vt):
     return vt == (0, 0, 1, 1)
+
 
 def load_csv(filename, skip, xc, yc, vc):
     """Turn a csv file into a glyphset.
@@ -156,7 +173,7 @@ def load_hdf(filename, node, xc, yc, vc=None):
     xc: Name/index of the x column
     yc: Name/index of the y column
     vc: Name/index of the value column (if applicable)
-    cats: List of expected categories. 
+    cats: List of expected categories.
         If cats is an empty list, a coding will be automatically generated
         Any value not on the list will be assigned category equal to list lenght
         Ignored if vc is not supplied.
@@ -167,7 +184,6 @@ def load_hdf(filename, node, xc, yc, vc=None):
     a = np.zeros((len(points), 4), order="F")
     a[:, :2] = points
 
-  
     data = table[vc] if vc else None
     print("Loaded %d items" % len(a))
 
