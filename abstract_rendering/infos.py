@@ -65,7 +65,7 @@ def encode(cats, defcat=-1):
     return f
 
 
-def AutoEncode(object):
+class AutoEncode(object):
     """Encoded values as numeric codes.
     Builds up a category->code dictionary incrementally.
     """

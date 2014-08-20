@@ -4,7 +4,7 @@ Tools for working with counts from multiple categories of data at once.
 Categories are modeled as stakced 2D arrays.    Each category is in its
 own slice of the stack.
 """
-from __future__ import print_function
+from __future__ import print_function, division
 import util
 import core
 import numpy as np
@@ -60,6 +60,37 @@ class ToCounts(core.CellShader):
         dtype = (grid.dtype if dtype is None else dtype)
         return grid.sum(axis=2, dtype=dtype)
 
+class NonZeros(core.CellShader):
+    "How many non-zero categories are there?"
+    def shade(self, grid):
+        mask = grid!=0
+        nonzero = np.zeros_like(grid)
+        nonzero[mask] = 1
+        return nonzero.sum(axis=2)
+
+
+class Ratio(core.CellShader):
+    """
+    Compute the ratio of one category to the sum of all cateogires.
+    Any cell with sum of zero is propogated as a 'zero' in the sum
+     * focus: The "one cateogry"
+              Will pick the local 'max' cateogry if set to a negative
+    """
+    def __init__(self, focus=-1):
+        self.focus = focus
+
+    def shade(self, grid):
+        if self.focus < 0:
+            plane = grid.max(axis=2)
+        else:
+            plane = grid[:, :, self.focus]
+
+        sum = grid.sum(axis=2)
+        mask = (sum != 0)
+        ratio = plane/sum
+        ratio[~mask] = 0
+        return ratio 
+        
 
 class Select(core.CellShader):
     """Get the counts from just one category.

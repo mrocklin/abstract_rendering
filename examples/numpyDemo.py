@@ -61,8 +61,6 @@ def _create_plot_component():
 #                          screen,
 #                          ivt)
 
-    print("screen x image -- {0} x {1}".format(screen, image.shape))
-
     # Create a plot data object and give it this data
     pd = ArrayPlotData()
     pd.set_data("imagedata", image)
