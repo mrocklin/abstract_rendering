@@ -9,7 +9,6 @@ matrix:
     - python: "3.3"
 
 install:
-  - "pip install blaze"
   - "pip install scipy"
   - "python setup.py install"
 
