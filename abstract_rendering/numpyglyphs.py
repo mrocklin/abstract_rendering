@@ -62,7 +62,8 @@ class PointCount(ar.Aggregator):
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.points()
-        coded = [info(cat) for cat in glyphset.data()]  # TODO: Remove this SEQUENTIAL op
+        coder = np.vectorize(info)      # TODO: Is there a faster option?  This is only
+        coded = coder(glyphset.data())  #       marginally faster that list comprehension...
         coded = np.array(coded)
         cats = coded.max()
 
