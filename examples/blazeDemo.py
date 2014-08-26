@@ -16,6 +16,7 @@ import abstract_rendering.categories as categories
 import abstract_rendering.infos as infos
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.blazeglyphs as blzg
+import abstract_rendering.numpyglyphs as npg
 
 from timer import Timer
 
@@ -43,21 +44,21 @@ def _create_plot_component():
                             schema="{r:float32, theta:float32, x:float32, y:float32, series:int32}")
 
     screen = (800,600)
-    ivt = util.zoom_fit(screen,glyphs.bounds())
+    vt = util.zoom_fit(screen,glyphs.bounds(), False)
 
     with Timer("Abstract-Render") as arTimer:   
       image = core.render(glyphs, 
                           infos.val(),
                           blzg.CountCategories("int32"),
-                          categories.HDAlpha([red, blue, green, purple, black]),
+                          npg.Spread(20) + categories.HDAlpha([red, blue, green, purple, black]),
                           screen,
-                          ivt)
+                          vt)
 #      image = core.render(glyphs, 
 #                          infos.valAt(4,0),
 #                          blzg.Count(), 
 #                          numeric.BinarySegment(white, black, 1),
 #                          screen,
-#                          ivt)
+#                          vt)
 
     # Create a plot data object and give it this data
     pd = ArrayPlotData()
@@ -70,7 +71,7 @@ def _create_plot_component():
     # Tweak some of the plot properties
     plot.title = "Abstract Rendering"
     plot.padding = 50
-    
+
     return plot
 
 

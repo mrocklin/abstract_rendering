@@ -3,6 +3,7 @@ import blaze as blz
 import numpy as np
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
+import math
 
 # TODO: Priveledges names be problematic.  Right now __x, __y, __info are used. 
 #       Should probably do something gensym(<root>, <exclude_names>).  Where
@@ -47,10 +48,14 @@ class Count(ar.Aggregator):
 
     def aggregate(self, glyphset, info, screen):
         points = glyphset.table
-        sparse = blz.by(points,
-                        points[['__x', '__y']],
-                        points[glyphset.valcol].count())
-        return to_numpy(sparse)
+        
+        finite = blz.merge(points['__x'].map(math.floor, schema='{__x: int32}'),
+                           points['__y'].map(math.floor, schema='{__y: int32}'),
+                           points['__x'].map(lambda x: 1, schema='{__info: int32}'))
+        sparse = blz.by(finite,
+                        finite[['__x', '__y']],
+                        finite['__info'].count())
+        return to_numpy(sparse, screen, '__info_count')
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -60,12 +65,18 @@ class Sum(ar.Aggregator):
     "Blaze sepcific implementation of the sum aggregator"
 
     def aggregate(self, glyphset, info, screen):
-        # TODO: Handle info.  Generate a new synthetic column based with info(valcol) and sum it
         points = glyphset.table
-        sparse = blz.by(points,
-                        points[['__x', '__y']],
-                        points[glyphset.valcol].sum())
-        return to_numpy(sparse)
+        
+        schema = "{__info: %s}" % self.infotype
+        infos = points[glyphset.valcol].map(info, schema=schema)
+        finite = blz.merge(points['__x'].map(math.floor, schema='{__x: int32}'),
+                           points['__y'].map(math.floor, schema='{__y: int32}'),
+                           infos)
+
+        sparse = blz.by(finite,
+                        finite[['__x', '__y']],
+                        finite['__info'].sum())
+        return to_numpy(sparse, screen, '__info_sum')
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
@@ -83,15 +94,17 @@ class CountCategories(ar.Aggregator):
         infos = points[glyphset.valcol].map(info, schema=schema)
         cats = infos.distinct()
 
-        data = blz.merge(points, infos)
-        sparse = blz.by(data,
-                        data[['__x', '__y', '__info']],
-                        data[glyphset.valcol].count())
+        finite = blz.merge(points['__x'].map(math.floor, schema='{__x: int32}'),
+                           points['__y'].map(math.floor, schema='{__y: int32}'),
+                           infos) 
+        sparse = blz.by(finite,
+                        finite[['__x', '__y', '__info']],
+                        finite['__info'].count())
 
         items = []
         for cat in blz.compute(cats):
             subset = sparse[sparse['__info'] == cat]
-            items.append(to_numpy(subset, screen))
+            items.append(to_numpy(subset[['__x', '__y', '__info_count']], screen, '__info_count'))
         
         rslt = np.dstack(items)
         return rslt
@@ -101,7 +114,7 @@ class CountCategories(ar.Aggregator):
         return reduce(lambda x, y: x+y,  vals)
 
 
-def to_numpy(sparse, screen=None):
+def to_numpy(sparse, screen=None, values='__info'):
     """
     Convert a blaze table to a numpy arary.
     Assumes table schema format is [x,y,val]
@@ -109,19 +122,19 @@ def to_numpy(sparse, screen=None):
     TODO: Add screen_origin so a subset of the space can sliced out easily
     """
     if not screen:
-        screen = (sparse['__x'].max() + 1, sparse['__y'].max() + 1)
+        screen = (blz.compute(sparse['__x'].max()) + 1, blz.compute(sparse['__y'].max()) + 1)
     else:
         #Just things that fit on the screen
         sparse = sparse[sparse['__x'] < screen[0] and sparse['__y'] < screen[1]]
-
-    coords= sparse[['__x','__y']]
-
-
+    
     (width, height) = screen
-    dense = np.zeros((height, width), dtype=np.int64)
 
-    # TODO: Things breka down here....
-    dense[sparse[:, 1], sparse[:, 0]] = sparse[:, -1]
+    xx = blz.into(np.ndarray, sparse.__x).astype(np.int32)
+    yy = blz.into(np.ndarray, sparse.__y).astype(np.int32)
+    vals = blz.into(np.ndarray, sparse[values])
+    
+    dense = np.zeros((height, width), dtype=vals.dtype)
+    dense[yy, xx] = vals
     return dense
 
 
