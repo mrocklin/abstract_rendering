@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import numpy as np
+import numpy.ma as ma
 from scipy.ndimage.filters import convolve
 from fast_project import _projectRects
 import abstract_rendering.glyphset as glyphset
@@ -8,12 +9,26 @@ import abstract_rendering.core as ar
 
 class Glyphset(glyphset.Glyphset):
     # TODO: Default data is list of None (?)
-    def __init__(self, points, data, vt=(0, 0, 1, 1)):
+    """
+    points: Base array of points (x, y, w, h)
+    data: Base array of data associated with points.
+          points[n] is associated with data[n]
+    vt: view transform 
+    clean_nan: Remove entries with nans in points?  Default is false. 
+    """
+    def __init__(self, points, data, vt=(0, 0, 1, 1), clean_nan=True):
+        if clean_nan:
+            mask = ~np.isnan(points).any(axis=1)
+            points = points[mask]
+            data = data[mask]
+
         self._points = points
         self._data = data
         self.vt = vt
         self.shaper = glyphset.ToPoint(glyphset.idx(0), glyphset.idx(1))
 
+
+          
         if not is_identity_transform(vt):
             self.projected = np.empty_like(points, dtype=np.int32)
             _projectRects(vt, points, self.projected)
@@ -52,27 +67,31 @@ class Glyphset(glyphset.Glyphset):
 class PointCount(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         sparse = glyphset.points()
-        dense = np.histogram2d(sparse[:, 1], sparse[:, 0], (screen[1], screen[0]))
+
+        dense = np.histogram2d(sparse[:, 1], sparse[:, 0],
+                               bins=(screen[1], screen[0]),
+                               range=((0, screen[1]), (0, screen[0])))
         return dense[0]
 
     def rollup(self, *vals):
         return reduce(lambda x, y: x+y,  vals)
 
 
+# TODO: IS there a faster option for the coder?  'vectorize' is only
+#       a little better than a list comprehension
 class PointCountCategories(ar.Aggregator):
     def aggregate(self, glyphset, info, screen):
         points = glyphset.points()
-        coder = np.vectorize(info)      # TODO: Is there a faster option?  This is only
-        coded = coder(glyphset.data())  #       marginally faster that list comprehension...
+        coder = np.vectorize(info)
+        coded = coder(glyphset.data())
         coded = np.array(coded)
         cats = coded.max()
 
         (width, height) = screen
         dims = (height, width, cats+1)
 
-        (xmin, ymin, _, _) = points.min(axis=0)
-        (xmax, ymax, _, _) = points.max(axis=0)
-        ranges = ((ymin, ymax), (xmin, xmax), (0, cats+1))  # Need cats+1 to get the breaks correct
+        # Need cats+1 to do proper categorization...
+        ranges = ((0, screen[1]), (0, screen[0]), (0, cats+1))
 
         data = np.hstack([np.fliplr(points[:, 0:2]), coded[:, np.newaxis]])
         dense = np.histogramdd(data, bins=dims, range=ranges)
@@ -88,27 +107,56 @@ class Spread(ar.CellShader):
     Spreads the values out in a regular pattern.
     Spreads categories inside their category plane (not between planes).
 
-    TODO: Add shape support
+    TODO: Spread beyond the bounds of the input plot?
 
-    * factor : How wide to spread?
-    * anti_alias: Can a value be fractionally spread into a cell (default is false)
+    * shape: Shape of the spread.  Supports "rect" and "circle"
+    * factor : How wide to spread? 
+    * anti_alias: Can a value be fractionally spread into a cell
+                  (default is false)
     """
-    def __init__(self, factor=1, anti_alias=False):
+    def __init__(self, factor=1, anti_alias=False, shape="circle"):
         self.factor = factor
         self.anti_alias = anti_alias
+        self.shape = shape
 
     def make_k(self):
-        if not self.anti_alias or (self.factor % 2) == 1:
-            kShape = (self.factor+1, self.factor+1)
-            k = np.ones(kShape)
-        else:
-            kShape = (self.factor, self.factor)
-            k = np.ones(kShape)
-            k[0] = .5
-            k[:, 0] = .5
-            k[-1] = .5
-            k[:, -1] = .5
-        return k
+        """Construct the weights matrix"""
+        if self.shape == "rect":
+            if not self.anti_alias or (self.factor % 2) == 1:
+                kShape = (self.factor+1, self.factor+1)
+                k = np.ones(kShape)
+            else:
+                kShape = (self.factor, self.factor)
+                k = np.ones(kShape)
+                k[0] = .5
+                k[:, 0] = .5
+                k[-1] = .5
+                k[:, -1] = .5
+            return k
+
+        if self.shape == "circle":
+            if not self.anti_alias or (self.factor % 2) == 1:
+                kShape = (self.factor+1, self.factor+1)
+                k = np.ones(kShape)
+                r = self.factor//2
+                rr = r**2
+                for x in xrange(0, r):
+                    for y in xrange(0, r):
+                        if ((x - r)**2 + (y - r)**2) > rr:
+                            k[x,y] = 0
+                            k[x,-(y+1)] = 0
+                            k[-(x+1),-(y+1)] = 0
+                            k[-(x+1),y] = 0
+                return k
+            else:
+                kShape = (self.factor, self.factor)
+                k = np.ones(kShape)
+                k[0] = .5
+                k[:, 0] = .5
+                k[-1] = .5
+                k[:, -1] = .5
+            return k
+
 
     def shade(self, grid):
         k = self.make_k()
@@ -118,7 +166,8 @@ class Spread(ar.CellShader):
         if len(grid.shape) == 3:
             cats = grid.shape[2]
             for cat in xrange(cats):
-                convolve(grid[:, :, cat], k, output=out[:, :, cat], mode='constant', cval=0.0)
+                convolve(grid[:, :, cat], k, output=out[:, :, cat],
+                         mode='constant', cval=0.0)
         else:
             convolve(grid, k, mode='constant', cval=0.0, output=out)
 
@@ -176,8 +225,8 @@ def load_hdf(filename, node, xc, yc, vc=None):
     vc: Name/index of the value column (if applicable)
     cats: List of expected categories.
         If cats is an empty list, a coding will be automatically generated
-        Any value not on the list will be assigned category equal to list lenght
-        Ignored if vc is not supplied.
+        Any value not on the list will be assigned category equal to
+        list length. This parameter is ignored if vc is not supplied.
     """
     import pandas as pd
     table = pd.read_hdf(filename, node)

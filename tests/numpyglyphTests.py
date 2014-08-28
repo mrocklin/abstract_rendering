@@ -145,6 +145,45 @@ class SpreadTests(unittest.TestCase):
         self.run_spread(2, a, b)
 
 
+    def test_spread_circle2(self):
+        a = np.asarray([[0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0],
+                        [0, 0, 0, 0]])
+
+        ex = np.asarray([[0, 0, 0, 0],
+                         [0, 0, 0, 0],
+                         [0, 1, 0, 0],
+                         [1, 1, 1, 0],
+                         [0, 1, 0, 0],
+                         [0, 0, 0, 0],
+                         [0, 0, 0, 0],
+                         [0, 0, 0, 0]])
+        self.run_spread(2, a, ex, shape="circle")
+
+    def test_spread_circle4(self):
+        a = np.asarray([[0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 1, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0]])
+
+        ex = np.asarray([[0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0],
+                         [0, 1, 1, 1, 0],
+                         [1, 1, 1, 1, 1],
+                         [0, 1, 1, 1, 0],
+                         [0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0]])
+        self.run_spread(4, a, ex, shape="circle")
 
 if __name__ == '__main__':
     unittest.main()
