@@ -149,12 +149,23 @@ class Spread(ar.CellShader):
                             k[-(x+1),y] = 0
                 return k
             else:
-                kShape = (self.factor, self.factor)
+                kShape = (self.factor+1, self.factor+1)
                 k = np.ones(kShape)
-                k[0] = .5
-                k[:, 0] = .5
-                k[-1] = .5
-                k[:, -1] = .5
+                r = self.factor//2
+                rr = r**2
+                for x in xrange(0, r):
+                    for y in xrange(0, r):
+                        if ((x - r)**2 + (y - r)**2) == rr:
+                            k[x,y] = .5 
+                            k[x,-(y+1)] = .5
+                            k[-(x+1),-(y+1)] = .5
+                            k[-(x+1),y] = .5
+                        elif ((x - r)**2 + (y - r)**2) > rr:
+                            k[x,y] = 0
+                            k[x,-(y+1)] = 0
+                            k[-(x+1),-(y+1)] = 0
+                            k[-(x+1),y] = 0
+                return k
             return k
 
 
