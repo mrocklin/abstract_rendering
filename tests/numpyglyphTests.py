@@ -23,7 +23,7 @@ class SpreadTests(unittest.TestCase):
                          [1, 1, 1, 0],
                          [1, 1, 1, 0],
                          [0, 0, 0, 0]])
-        self.run_spread(2, a, ex)
+        self.run_spread(2, a, ex, shape="rect")
 
     def test_spread_twoseeds(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -35,7 +35,7 @@ class SpreadTests(unittest.TestCase):
                          [1, 2, 2, 1],
                          [1, 2, 2, 1],
                          [0, 0, 0, 0]])
-        self.run_spread(2, a, ex)
+        self.run_spread(2, a, ex, shape="rect")
 
 
 
@@ -57,7 +57,7 @@ class SpreadTests(unittest.TestCase):
                        [0,   0, 0, 0],
                        [0,   0, 0, 0],
                        [0,   0, 0, 0]], dtype=np.float64)
-        self.run_spread(2, a, ex, anti_alias=True)
+        self.run_spread(2, a, ex, anti_alias=True, shape="rect")
 
     def test_spread_two(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -77,7 +77,7 @@ class SpreadTests(unittest.TestCase):
                          [0, 0, 0, 0],
                          [0, 0, 0, 0],
                          [0, 0, 0, 0]])
-        self.run_spread(2, a, ex)
+        self.run_spread(2, a, ex, shape="rect")
 
     def test_spread_three(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -97,7 +97,7 @@ class SpreadTests(unittest.TestCase):
                          [0, 0, 0, 0],
                          [0, 0, 0, 0],
                          [0, 0, 0, 0]])
-        self.run_spread(3, a, ex)
+        self.run_spread(3, a, ex, shape="rect")
 
     def test_spread_four(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -109,7 +109,7 @@ class SpreadTests(unittest.TestCase):
                          [1, 1, 1, 1],
                          [1, 1, 1, 1],
                          [1, 1, 1, 1]])
-        self.run_spread(4, a, ex)
+        self.run_spread(4, a, ex, shape="rect")
 
     def test_spread_zero(self):
         a = np.asarray([[0, 0, 0, 0],
@@ -121,7 +121,7 @@ class SpreadTests(unittest.TestCase):
                          [0, 1, 0, 0],
                          [0, 0, 0, 0],
                          [0, 0, 0, 0]])
-        self.run_spread(0, a, ex)
+        self.run_spread(0, a, ex, shape="rect")
 
 
     def test_spread_cats(self):
@@ -142,7 +142,7 @@ class SpreadTests(unittest.TestCase):
                          [0, 1, 1, 1],
                          [0, 1, 1, 1],
                          [0, 1, 1, 1]]]).T
-        self.run_spread(2, a, b)
+        self.run_spread(2, a, b, shape="rect")
 
 
     def test_spread_circle2(self):

@@ -16,7 +16,7 @@ class Glyphset(glyphset.Glyphset):
     vt: view transform 
     clean_nan: Remove entries with nans in points?  Default is false. 
     """
-    def __init__(self, points, data, vt=(0, 0, 1, 1), clean_nan=True):
+    def __init__(self, points, data, vt=(0, 0, 1, 1), clean_nan=False):
         if clean_nan:
             mask = ~np.isnan(points).any(axis=1)
             points = points[mask]
