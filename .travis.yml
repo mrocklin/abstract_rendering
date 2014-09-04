@@ -25,10 +25,6 @@ install:
   - source activate test-environment
   - python setup.py install
 
-install:
-  - "pip install scipy"
-  - "python setup.py install"
-
 script: 
   - cd tests
   - nosetests *.py
