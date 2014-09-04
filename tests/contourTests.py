@@ -33,15 +33,15 @@ class ContourTests(unittest.TestCase):
         contours = c.fuse(self.pyramid2)
 
         self.assertEquals(len(contours), 1)
-        expected0 = [(1.0, 0.5), 
-                     (2.0, 0.5), 
-                     (2.5, 1.0),
-                     (2.5, 2.0),
-                     (2.0, 2.5),
-                     (1.0, 2.5),
-                     (0.5, 2.0),
-                     (0.5, 1.0),
-                     (1.0, 0.5)]
+        expected0 = [[(1.0, 0.5), 
+                      (2.0, 0.5), 
+                      (2.5, 1.0),
+                      (2.5, 2.0),
+                      (2.0, 2.5),
+                      (1.0, 2.5),
+                      (0.5, 2.0),
+                      (0.5, 1.0),
+                      (1.0, 0.5)]]
 
         self.assertListEqual(contours[.5], expected0)
 
@@ -50,23 +50,23 @@ class ContourTests(unittest.TestCase):
         levels = c.fuse(self.pyramid4)
 
         self.assertEquals(len(levels), 3)
-        self.assertEquals(len(levels[.75]), 27)
-        self.assertEquals(len(levels[1.5]), 19)
-        self.assertEquals(len(levels[2.25]), 13)
+        self.assertEquals(len(levels[.75][0]), 27)
+        self.assertEquals(len(levels[1.5][0]), 19)
+        self.assertEquals(len(levels[2.25][0]), 13)
 
-        expected2 = [(3.0, 2.25),
-                     (4.0, 2.25),
-                     (5.0, 2.25),
-                     (5.375, 3.0),
-                     (5.375, 4.0),
-                     (5.375, 5.0),
-                     (5.0, 5.75),
-                     (4.0, 5.75),
-                     (3.0, 5.75),
-                     (2.25, 5.0),
-                     (2.25, 4.0),
-                     (2.25, 3.0),
-                     (3.0, 2.25)]
+        expected2 = [[(3.0, 2.25),
+                      (4.0, 2.25),
+                      (5.0, 2.25),
+                      (5.375, 3.0),
+                      (5.375, 4.0),
+                      (5.375, 5.0),
+                      (5.0, 5.75),
+                      (4.0, 5.75),
+                      (3.0, 5.75),
+                      (2.25, 5.0),
+                      (2.25, 4.0),
+                      (2.25, 3.0),
+                      (3.0, 2.25)]]
 
         self.assertListEqual(levels[2.25], expected2)
 

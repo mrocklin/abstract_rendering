@@ -13,8 +13,9 @@ class Contour(core.ShapeShader):
          levels as a scalar determines how many levels will be built
          levels as a list determines where the levels are built
 
-         points flag indicates if it should return values as [(x,y), (x,y)...] (default, True)
-         or as [[x,x,x,x...],[y,y,y...]] (False)
+         points -- Indicates if it should return values 
+                    as [[(x,y)...], [(x,y)...]] (default, True)
+                    or as [[x,x...], [x,x...],[y,y...][y,y...]] (False)
 
         """
 
@@ -39,10 +40,10 @@ class Contour(core.ShapeShader):
             levels = Contour.nlevels(grid, self.levels)
 
         isos = dict()
-        for i in range(0, len(levels)):
-            points = c.trace(levels[i], points=self.points)
-            points = [[], []] if len(points) == 0 else points[0]
-            isos[levels[i]] = points
+        for level in levels:
+            points = c.trace(level, points=self.points)
+            points = [[], []] if len(points) == 0 else points
+            isos[level] = points
 
         return isos
 
