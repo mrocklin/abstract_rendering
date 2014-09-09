@@ -1,4 +1,5 @@
 from __future__ import print_function, division, absolute_import
+from six.moves import range
 import numpy as np
 from scipy.ndimage.filters import convolve
 from abstract_rendering.fast_project import _projectRects
@@ -137,8 +138,8 @@ class Spread(ar.CellShader):
                 k = np.ones(kShape)
                 r = self.factor//2
                 rr = r**2
-                for x in xrange(0, r):
-                    for y in xrange(0, r):
+                for x in range(0, r):
+                    for y in range(0, r):
                         if ((x - r)**2 + (y - r)**2) > rr:
                             k[x, y] = 0
                             k[x, -(y+1)] = 0
@@ -150,8 +151,8 @@ class Spread(ar.CellShader):
                 k = np.ones(kShape)
                 r = self.factor//2
                 rr = r**2
-                for x in xrange(0, r):
-                    for y in xrange(0, r):
+                for x in range(0, r):
+                    for y in range(0, r):
                         if ((x - r)**2 + (y - r)**2) == rr:
                             k[x, y] = .5
                             k[x, -(y+1)] = .5
@@ -172,7 +173,7 @@ class Spread(ar.CellShader):
         out = np.empty_like(grid, dtype=out_dtype)
         if len(grid.shape) == 3:
             cats = grid.shape[2]
-            for cat in xrange(cats):
+            for cat in range(cats):
                 convolve(grid[:, :, cat], k, output=out[:, :, cat],
                          mode='constant', cval=0.0)
         else:

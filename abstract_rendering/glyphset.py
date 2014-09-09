@@ -1,8 +1,9 @@
 from __future__ import print_function, division, absolute_import
+from six.moves import map
 import numpy as np
 import re
 from abstract_rendering.fast_project import _projectRects
-
+import six
 
 def enum(**enums): return type('Enum', (), enums)
 ShapeCodes = enum(POINT=0, LINE=1, RECT=2)
@@ -117,9 +118,11 @@ class Shaper(object):
     # TODO: When getting subsets of the data out of glyphset.points(), remove this colMajor and handle it up in glyphset instead
     def __call__(self, vals):
         if not self.colMajor:
-            return [map(lambda f: f(val), self.fns) for val in vals]
+            shapes = [list(map(lambda f: f(val), self.fns)) for val in vals]
         else:
-            return [map(lambda f: f(val), self.fns) for val in zip(*vals)]
+            shapes = [list(map(lambda f: f(val), self.fns)) for val in zip(*vals)]
+
+        return shapes
 
 
 class Literals(Shaper):

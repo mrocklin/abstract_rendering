@@ -5,6 +5,7 @@ Categories are modeled as stakced 2D arrays.    Each category is in its
 own slice of the stack.
 """
 from __future__ import print_function, division, absolute_import
+from six.moves import reduce
 import numpy as np
 from math import log
 import abstract_rendering.util as util

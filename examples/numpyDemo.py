@@ -9,6 +9,7 @@ Draws a colormapped image plot
    history".
 """
 # Abstract rendering imports
+from __future__ import print_function, division, absolute_import
 import abstract_rendering.util as util
 import abstract_rendering.core as core
 import abstract_rendering.numeric as numeric

@@ -2,6 +2,8 @@
 execution and the base clases for shared data representations.
 """
 from __future__ import print_function, division, absolute_import
+from six.moves import range
+
 import numpy as np
 import abstract_rendering.geometry as geometry
 import abstract_rendering.glyphset as glyphset
@@ -103,7 +105,7 @@ class GlyphAggregator(Aggregator):
         # co-iterating on number of points in case glyphset.data() is a non-length-carrying placeholder
         # TODO: Should the default placeholder carry length?
         infos = [info(data) for (data, _)
-                 in zip(glyphset.data(), xrange(len(glyphset.points())))]
+                 in zip(glyphset.data(), range(len(glyphset.points())))]
         aggregates = self.allocate(glyphset, screen)
         for idx, points in enumerate(glyphset.points()):
             self.combine(aggregates,
@@ -246,8 +248,8 @@ class SequentialShader(Shader):
         outgrid = self.makegrid(grid)
         self._pre(grid)
         (height, width) = outgrid.shape
-        for x in xrange(0, width):
-            for y in xrange(0, height):
+        for x in range(0, width):
+            for y in range(0, height):
                 outgrid[y, x] = self.cellfunc(grid, x, y)
 
         return outgrid

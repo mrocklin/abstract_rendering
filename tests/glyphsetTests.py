@@ -1,3 +1,5 @@
+from __future__ import print_function, division, absolute_import
+from six.moves import range
 import numpy as np
 import unittest
 import abstract_rendering.glyphset as glyphset
@@ -31,7 +33,7 @@ class UtilTests(unittest.TestCase):
         self.assertEquals(2, f([0, 1, 2, 3, 4]))
         self.assertEquals(20, f([0, 10, 20, 30, 40]))
         self.assertIsNone(f([0, 1, None, 3, 4]), "None from list")
-        self.assertEquals(3, f(xrange(1, 20)), "Function source")
+        self.assertEquals(3, f(range(1, 20)), "Function source")
 
 
 class ShaperTests(unittest.TestCase):
