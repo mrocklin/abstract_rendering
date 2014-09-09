@@ -1701,22 +1701,51 @@ static PyTypeObject CntrType = {
     Cntr_new,                  /* tp_new */
 };
 
-static PyMethodDef module_methods[] = {
-    {NULL}  /* Sentinel */
+struct module_state {
+    PyObject *error;
+};
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+static PyObject *
+error_out(PyObject *m) {
+    struct module_state *st = GETSTATE(m);
+    PyErr_SetString(st->error, "something bad happened");
+    return NULL;
+}
+
+static PyMethodDef myextension_methods[] = {
+    {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
+    {NULL, NULL}
 };
 
+static int myextension_traverse(PyObject *m, visitproc visit, void *arg) {
+  Py_VISIT(GETSTATE(m)->error);
+  return 0;
+}
 
-#ifdef NUMARRAY
+static int myextension_clear(PyObject *m) {
+  Py_CLEAR(GETSTATE(m)->error);
+  return 0;
+} 
+
+static struct PyModuleDef moduledef = {
+  PyModuleDef_HEAD_INIT,
+  "_cntr",
+  NULL,
+  sizeof(struct module_state),
+  myextension_methods,
+  NULL,
+  myextension_traverse,
+  myextension_clear,
+  NULL
+};
+
 PyMODINIT_FUNC
-init_cntr(void)
+PyInit__cntr(void)
 {
-    PyObject* m;
-
     if (PyType_Ready(&CntrType) < 0)
         return NULL;
 
-    m = Py_InitModule3("_cntr", module_methods,
-                       "Contouring engine as an extension type (numarray).");
+    PyObject *m = PyModule_Create(&moduledef);
 
     if (m == NULL)
       return NULL;
@@ -1724,28 +1753,6 @@ init_cntr(void)
     import_array();
     Py_INCREF(&CntrType);
     PyModule_AddObject(m, "Cntr", (PyObject *)&CntrType);
+
+    return m;
 }
-
-#else
-PyMODINIT_FUNC
-init_cntr(void)
-{
-    PyObject* m;
-
-    if (PyType_Ready(&CntrType) < 0)
-        return NULL;
-
-    m = Py_InitModule3("_cntr", module_methods,
-                       "Contouring engine as an extension type (Numeric).");
-
-    if (m == NULL)
-      return NULL;
-
-    import_array();
-    Py_INCREF(&CntrType);
-    PyModule_AddObject(m, "Cntr", (PyObject *)&CntrType);
-}
-
-#endif
-
-
