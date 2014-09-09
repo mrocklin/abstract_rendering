@@ -1,6 +1,7 @@
-import core
-from abstract_rendering._cntr import Cntr
+from __future__ import print_function, division, absolute_import
 import numpy as np
+import abstract_rendering.core as core
+from abstract_rendering._cntr import Cntr
 
 
 class Contour(core.ShapeShader):
@@ -13,7 +14,7 @@ class Contour(core.ShapeShader):
          levels as a scalar determines how many levels will be built
          levels as a list determines where the levels are built
 
-         points -- Indicates if it should return values 
+         points -- Indicates if it should return values
                     as [[(x,y)...], [(x,y)...]] (default, True)
                     or as [[x,x...], [x,x...],[y,y...][y,y...]] (False)
 

@@ -4,11 +4,11 @@ Tools for working with counts from multiple categories of data at once.
 Categories are modeled as stakced 2D arrays.    Each category is in its
 own slice of the stack.
 """
-from __future__ import print_function, division
-import util
-import core
+from __future__ import print_function, division, absolute_import
 import numpy as np
 from math import log
+import abstract_rendering.util as util
+import abstract_rendering.core as core
 
 
 # ------------ Aggregators -------------------
@@ -60,10 +60,11 @@ class ToCounts(core.CellShader):
         dtype = (grid.dtype if dtype is None else dtype)
         return grid.sum(axis=2, dtype=dtype)
 
+
 class NonZeros(core.CellShader):
     "How many non-zero categories are there?"
     def shade(self, grid):
-        mask = grid!=0
+        mask = grid != 0
         nonzero = np.zeros_like(grid)
         nonzero[mask] = 1
         return nonzero.sum(axis=2)
@@ -89,8 +90,8 @@ class Ratio(core.CellShader):
         mask = (sum != 0)
         ratio = plane/sum
         ratio[~mask] = 0
-        return ratio 
-        
+        return ratio
+
 
 class Select(core.CellShader):
     """Get the counts from just one category.
@@ -178,7 +179,7 @@ class HDAlpha(core.CellShader):
         sums = ToCounts.shade(grid, dtype=np.float32)
         mask = (sums != 0)
 
-        #Ensure category count and color count match
+        # Ensure category count and color count match
         cats = grid.shape[2]
         catcolors = self.catcolors
         if len(catcolors) > cats:

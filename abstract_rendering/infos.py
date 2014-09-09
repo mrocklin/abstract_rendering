@@ -2,6 +2,7 @@
 Each info function returns callable that can be used on a single
 entry in the dataset.
 """
+from __future__ import print_function, division, absolute_import
 
 
 def const(v):

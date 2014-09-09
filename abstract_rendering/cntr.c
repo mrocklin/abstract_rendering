@@ -1526,7 +1526,7 @@ static void
 Cntr_dealloc(Cntr* self)
 {
     Cntr_clear(self);
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -1713,13 +1713,13 @@ init_cntr(void)
     PyObject* m;
 
     if (PyType_Ready(&CntrType) < 0)
-        return;
+        return NULL;
 
     m = Py_InitModule3("_cntr", module_methods,
                        "Contouring engine as an extension type (numarray).");
 
     if (m == NULL)
-      return;
+      return NULL;
 
     import_array();
     Py_INCREF(&CntrType);
@@ -1733,13 +1733,13 @@ init_cntr(void)
     PyObject* m;
 
     if (PyType_Ready(&CntrType) < 0)
-        return;
+        return NULL;
 
     m = Py_InitModule3("_cntr", module_methods,
                        "Contouring engine as an extension type (Numeric).");
 
     if (m == NULL)
-      return;
+      return NULL;
 
     import_array();
     Py_INCREF(&CntrType);
