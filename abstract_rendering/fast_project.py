@@ -40,8 +40,7 @@ try:
 except OSError:
     _lib_dispatch = _lib
 
-mk_buff = ctypes.pythonapi.PyBuffer_FromMemory
-mk_buff.restype = ctypes.py_object
+mk_buff = ctypes.pythonapi.PyMemoryView_FromMemory
 
 def _projectRects(viewxform, inputs, outputs, use_dispatch = False):
     if (inputs.flags.f_contiguous): 
@@ -150,7 +149,7 @@ def _projectRectsGenerator(viewxform,
             if count.value == 0:
                 break
 
-            yield np.frombuffer(mk_buff(buff, total_size),
+            yield np.frombuffer(mk_buff(buff, total_size, PyBuff_READ),
                                 dtype='i4').reshape((4,chunk_size))[:,0:count.value]
 
         end_function(token)
