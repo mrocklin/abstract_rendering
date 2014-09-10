@@ -11,6 +11,7 @@ from __future__ import print_function
 import ctypes
 import numpy as np
 import os
+import sys
 
 def _type_lib(lib):
     from ctypes import c_void_p, c_size_t
@@ -40,7 +41,11 @@ try:
 except OSError:
     _lib_dispatch = _lib
 
-mk_buff = ctypes.pythonapi.PyMemoryView_FromMemory
+if sys.version_info.major > 2:
+    mk_buff = ctypes.pythonapi.PyMemoryView_FromMemory
+else:
+    mk_buff = ctypes.pythonapi.PyBuffer_FromMemory
+    mk_buff.restype = ctypes.py_object
 
 def _projectRects(viewxform, inputs, outputs, use_dispatch = False):
     if (inputs.flags.f_contiguous): 
