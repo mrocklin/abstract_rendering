@@ -2,10 +2,23 @@ from __future__ import print_function
 from distutils.core import setup, Extension
 from os.path import abspath, join, dirname
 import sys
-import os
+import os, os.path
 from numpy import get_include
 
 numpy_include_dir = get_include()
+
+# Version reporting/recording
+# The ABSTRACT_RENDERING_VERSION is read from _version.txt whenver setup is run
+# This version is also used in pypi.
+# If the file is not found, it is created with version -1.-1.-1
+
+if not os.path.isfile('abstract_rendering/_version.txt'):
+    with file('abstract_rendering/_version.txt', 'w') as f:
+        f.write('-1.-1.-1')
+
+with file('abstract_rendering/_version.txt', 'r') as f:
+    ABSTRACT_RENDERING_VERSION = f.read().strip()
+
 
 # Flag to indicate that libdispatch should be used (OS X only)
 DISPATCH_FLAG = "--dispatch"
@@ -124,7 +137,7 @@ if 'develop' in sys.argv:
     sys.exit()
 
 setup(name='abstract_rendering',
-      version='0.5.0',
+      version= ABSTRACT_RENDERING_VERSION,
       description='Rendering as a binning process',
       author='Joseph Cottam',
       author_email='jcottam@indiana.edu',
