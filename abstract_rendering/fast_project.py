@@ -36,7 +36,15 @@ _lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
 _type_lib(_lib)
 
 try:
-    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform_libdispatch.so'))
+    import distutils.sysconfig
+    so_ext = distutils.sysconfig.get_config_var('SOABI') \
+            or distutils.sysconfig.get_config_var('EXT_SUFFIX') \
+            or distutils.sysconfig.get_config_var('SHLIB_SUFFIX') \
+            or distutils.sysconfig.get_config_var('SO') \
+            or '.so'
+
+    filename = "transform_libdispatch.{0}".format(so_ext)
+    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), filename))
     _type_lib(_lib_dispatch)
 except OSError:
     _lib_dispatch = _lib
