@@ -1660,8 +1660,7 @@ static PyMethodDef Cntr_methods[] = {
 };
 
 static PyTypeObject CntrType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cntr.Cntr",               /*tp_name*/
     sizeof(Cntr),              /*tp_basicsize*/
     0,                         /*tp_itemsize*/
