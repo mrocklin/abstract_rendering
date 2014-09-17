@@ -4,10 +4,6 @@ python:
   - "2.7"
   - "3.3"
 
-matrix:
-  allow_failures:
-    - python: "3.3"
-
 install:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget http://repo.continuum.io/miniconda/Miniconda-3.4.2-Linux-x86_64.sh -O miniconda.sh;

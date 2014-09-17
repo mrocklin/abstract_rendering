@@ -1726,32 +1726,52 @@ static int myextension_clear(PyObject *m) {
   return 0;
 } 
 
-static struct PyModuleDef moduledef = {
-  PyModuleDef_HEAD_INIT,
-  "_cntr",
-  NULL,
-  sizeof(struct module_state),
-  myextension_methods,
-  NULL,
-  myextension_traverse,
-  myextension_clear,
-  NULL
+// HEAVILY influenced by http://python3porting.com/cextensions.html
+
+#if PY_MAJOR_VERSION >= 3
+  #define MOD_ERROR_VAL NULL
+  #define MOD_SUCCESS_VAL(val) val
+  #define MOD_INIT(name) PyMODINIT_FUNC PyInit__cntr(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+    static struct PyModuleDef moduledef = { \
+      PyModuleDef_HEAD_INIT, \
+      "_cntr", \
+      NULL, \
+      sizeof(struct module_state), \
+      myextension_methods, \
+      NULL, \
+      myextension_traverse, \
+      myextension_clear, \
+      NULL \
+    }; \
+    ob = PyModule_Create(&moduledef);
+#else
+  #define MOD_ERROR_VAL
+  #define MOD_SUCCESS_VAL(val)
+  #define MOD_INIT(name) PyMODINIT_FUNC init_cntr(void)
+  #define MOD_DEF(ob, name, doc, methods) \
+          ob = Py_InitModule3(name, methods, doc); 
+#endif
+
+static PyMethodDef module_methods[] = {
+    {NULL}  /* Sentinel */
 };
 
-PyMODINIT_FUNC
-PyInit__cntr(void)
+MOD_INIT(void)
 {
     if (PyType_Ready(&CntrType) < 0)
-        return NULL;
+        return MOD_ERROR_VAL;
 
-    PyObject *m = PyModule_Create(&moduledef);
+    PyObject *m;
+    MOD_DEF(m, "_cntr", "Contouring engine as an extension type", module_methods)
+
 
     if (m == NULL)
-      return NULL;
+      return MOD_ERROR_VAL;
 
     import_array();
     Py_INCREF(&CntrType);
     PyModule_AddObject(m, "Cntr", (PyObject *)&CntrType);
 
-    return m;
+    return MOD_SUCCESS_VAL(m);
 }
