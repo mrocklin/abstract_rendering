@@ -1,3 +1,6 @@
+from __future__ import print_function, division, absolute_import
+
+
 def bressenham(canvas, line, val):
     """
     based on 'optimized and simplified' version at

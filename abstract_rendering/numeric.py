@@ -1,7 +1,10 @@
-import core
-import util
+from __future__ import print_function, division, absolute_import
+from six.moves import reduce
+
 import numpy as np
 import math
+import abstract_rendering.core as core
+import abstract_rendering.util as util
 
 
 # ----------- Aggregators -----------

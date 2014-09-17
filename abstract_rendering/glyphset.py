@@ -1,7 +1,9 @@
+from __future__ import print_function, division, absolute_import
+from six.moves import map
 import numpy as np
 import re
-from fast_project import _projectRects
-
+from abstract_rendering.fast_project import _projectRects
+import six
 
 def enum(**enums): return type('Enum', (), enums)
 ShapeCodes = enum(POINT=0, LINE=1, RECT=2)
@@ -67,7 +69,6 @@ class Glyphset(object):
 
         return Glyphset(out, self.data(), Literals(self.shaper.code))
 
-
     def data(self):
         return self._data
 
@@ -117,9 +118,11 @@ class Shaper(object):
     # TODO: When getting subsets of the data out of glyphset.points(), remove this colMajor and handle it up in glyphset instead
     def __call__(self, vals):
         if not self.colMajor:
-            return [map(lambda f: f(val), self.fns) for val in vals]
+            shapes = [list(map(lambda f: f(val), self.fns)) for val in vals]
         else:
-            return [map(lambda f: f(val), self.fns) for val in zip(*vals)]
+            shapes = [list(map(lambda f: f(val), self.fns)) for val in zip(*vals)]
+
+        return shapes
 
 
 class Literals(Shaper):
@@ -175,17 +178,16 @@ def const(v):
 
 def item(i):
     """
-    Get items out of a collection.  
+    Get items out of a collection.
     Suiteable for use with numerically indexed (i.e., array)
     or object-indexed (i.e., dictionary) sources.
 
     * i -- The item parameter that will be used
-    
-    TODO: Change method name to 'item'
     """
     def f(a):
         return a[i]
     return f
+
 
 def idx(i):
     "The same as item, but a common name when using numeric indexes"
@@ -232,10 +234,10 @@ def load_hdf(filename, node, xc, yc, vc, width, height, shapecode):
     xc: Name/index of the x column
     yc: Name/index of the y column
     vc: Name/index of the value column (if applicable)
-    cats: List of expected categories. 
+    cats: List of expected categories.
         If cats is an empty list, a coding will be automatically generated
-        Any value not on the list will be assigned category equal to list lenght
-        Ignored if vc is not supplied.
+        Any value not on the list will be assigned category equal to
+        list length. Cats is ignored if vc is not supplied.
     """
     import pandas as pd
     table = pd.read_hdf(filename, node)
@@ -243,7 +245,7 @@ def load_hdf(filename, node, xc, yc, vc, width, height, shapecode):
     y = np.array(table[yc])
     w = np.array([width] * len(x))
     h = np.array([height] * len(x))
-    points = np.vstack([x,y,w,h]).T
+    points = np.vstack([x, y, w, h]).T
     data = table[vc] if vc else ([1] * len(x))
     print("Loaded %d items" % len(x))
 

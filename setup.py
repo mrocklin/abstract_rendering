@@ -13,10 +13,10 @@ numpy_include_dir = get_include()
 # If the file is not found, it is created with version -1.-1.-1
 
 if not os.path.isfile('abstract_rendering/_version.txt'):
-    with file('abstract_rendering/_version.txt', 'w') as f:
+    with open('abstract_rendering/_version.txt', 'w') as f:
         f.write('-1.-1.-1')
 
-with file('abstract_rendering/_version.txt', 'r') as f:
+with open('abstract_rendering/_version.txt', 'r') as f:
     ABSTRACT_RENDERING_VERSION = f.read().strip()
 
 

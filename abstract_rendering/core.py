@@ -1,10 +1,12 @@
 """ Core abstract rendering abstractions. This includes the main drivers of
 execution and the base clases for shared data representations.
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
+from six.moves import range
+
 import numpy as np
-import geometry
-import glyphset
+import abstract_rendering.geometry as geometry
+import abstract_rendering.glyphset as glyphset
 
 
 # ------------------- Basic process function --------------------------------
@@ -23,7 +25,7 @@ def render(glyphs, info, aggregator, shader, screen, vt):
     aggregates = aggregator.aggregate(projected, info, screen)
     # TODO: Add shader specialization here
     rslt = shader(aggregates)
-    return rslt 
+    return rslt
 
 
 # -------------------------  Aggregators and related utilities ----------------
@@ -102,7 +104,8 @@ class GlyphAggregator(Aggregator):
 
         # co-iterating on number of points in case glyphset.data() is a non-length-carrying placeholder
         # TODO: Should the default placeholder carry length?
-        infos = [info(data) for (data, _) in zip(glyphset.data(), xrange(len(glyphset.points())))]
+        infos = [info(data) for (data, _)
+                 in zip(glyphset.data(), range(len(glyphset.points())))]
         aggregates = self.allocate(glyphset, screen)
         for idx, points in enumerate(glyphset.points()):
             self.combine(aggregates,
@@ -162,7 +165,8 @@ class Shader(object):
     def __add__(self, other):
         """Extend this shader by executing another transfer in sequence."""
         if (not isinstance(other, Shader)):
-                raise TypeError("Can only extend with Shaders.  Received a " + str(type(other)))
+                raise TypeError("Can only extend with Shaders.  Received a {0}"
+                                .format(str(type(other))))
         return Seq(self, other)
 
 
@@ -179,7 +183,7 @@ class ShapeShader(Shader):
 
 # TODO: Add specialization to Shaders....
 class CellShader(Shader):
-    """Cell shaders takea  grid and produce a new grid."""
+    """Cell shaders take a grid and produce a new grid."""
 
     def shade(self, grid):
         """Execute the actual data shader operation."""
@@ -199,10 +203,11 @@ class Seq(Shader):
     def __add__(self, other):
         if (other is None):
             return self
-        elif not isinstance(self._parts[-1], Shader):
-            raise ValueError("Sequence already terminated by cell-shader.  Cannot extend further.")
+        elif not isinstance(self._parts[-1], CellShader):
+            raise ValueError("Cannot extend: Sequence terminated by non-CellShader.")
         elif (not isinstance(other, Shader)):
-            raise TypeError("Can only extend with Shaders. Received a " + str(type(other)))
+            raise TypeError("Can only extend with Shaders. Received a "
+                            .format(str(type(other))))
         return Seq(*(self._parts + (other,)))
 
     def __call__(self, grid):
@@ -223,9 +228,12 @@ class SequentialShader(Shader):
         return self.shade(grid)
 
     def cellfunc(grid, x, y):
-        "Override this method. It will be called for each pixel in the outgrid."
+        """
+        This method will be called for each pixel in the outgrid.
+        Must be implemented in subclasses.
+        """
         raise NotImplementedError
-    
+
     def makegrid(self, grid):
         """Create an output grid.
 
@@ -235,14 +243,13 @@ class SequentialShader(Shader):
         (width, height) = grid.shape[0], grid.shape[1]
         return np.ndarray((width, height, 4), dtype=np.uint8)
 
-
     def shade(self, grid):
         """Access each element in the out grid sequentially"""
         outgrid = self.makegrid(grid)
         self._pre(grid)
         (height, width) = outgrid.shape
-        for x in xrange(0, width):
-            for y in xrange(0, height):
+        for x in range(0, width):
+            for y in range(0, height):
                 outgrid[y, x] = self.cellfunc(grid, x, y)
 
         return outgrid

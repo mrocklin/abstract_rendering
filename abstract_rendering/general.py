@@ -2,7 +2,8 @@
 Utilities that apply across a broad variety of categories.
 """
 
-import core
+from __future__ import print_function, division, absolute_import
+import abstract_rendering.core as core
 
 
 class Id(core.CellShader):

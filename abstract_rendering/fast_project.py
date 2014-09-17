@@ -11,6 +11,13 @@ from __future__ import print_function
 import ctypes
 import numpy as np
 import os
+import sys
+
+import distutils.sysconfig
+so_ext = distutils.sysconfig.get_config_var('EXT_SUFFIX') \
+        or distutils.sysconfig.get_config_var('SHLIB_SUFFIX') 
+if not so_ext:
+    so_ext = distutils.sysconfig.get_config_var('SO') or '.so'
 
 def _type_lib(lib):
     from ctypes import c_void_p, c_size_t
@@ -30,18 +37,22 @@ def _type_lib(lib):
         lib.async_transform_d_start.restype = c_void_p
         lib.async_transform_d_end.argtypes = [c_void_p]
         lib.async_transform_d_next.argtypes = [c_void_p, c_void_p, c_void_p]
-
-_lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform.so'))
+_lib_filename = 'transform{0}'.format(so_ext)
+_lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), _lib_filename))
 _type_lib(_lib)
 
 try:
-    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform_libdispatch.so'))
+    _lib_filename = "transform_libdispatch{0}".format(so_ext)
+    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), _lib_filename))
     _type_lib(_lib_dispatch)
 except OSError:
     _lib_dispatch = _lib
 
-mk_buff = ctypes.pythonapi.PyBuffer_FromMemory
-mk_buff.restype = ctypes.py_object
+if sys.version_info.major > 2:
+    mk_buff = ctypes.pythonapi.PyMemoryView_FromMemory
+else:
+    mk_buff = ctypes.pythonapi.PyBuffer_FromMemory
+    mk_buff.restype = ctypes.py_object
 
 def _projectRects(viewxform, inputs, outputs, use_dispatch = False):
     if (inputs.flags.f_contiguous): 
@@ -150,7 +161,7 @@ def _projectRectsGenerator(viewxform,
             if count.value == 0:
                 break
 
-            yield np.frombuffer(mk_buff(buff, total_size),
+            yield np.frombuffer(mk_buff(buff, total_size, PyBuff_READ),
                                 dtype='i4').reshape((4,chunk_size))[:,0:count.value]
 
         end_function(token)

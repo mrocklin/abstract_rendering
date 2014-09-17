@@ -1,8 +1,8 @@
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
+from six.moves import range
 import numpy as np
-import numpy.ma as ma
 from scipy.ndimage.filters import convolve
-from fast_project import _projectRects
+from abstract_rendering.fast_project import _projectRects
 import abstract_rendering.glyphset as glyphset
 import abstract_rendering.core as ar
 
@@ -13,8 +13,8 @@ class Glyphset(glyphset.Glyphset):
     points: Base array of points (x, y, w, h)
     data: Base array of data associated with points.
           points[n] is associated with data[n]
-    vt: view transform 
-    clean_nan: Remove entries with nans in points?  Default is false. 
+    vt: view transform
+    clean_nan: Remove entries with nans in points?  Default is false.
     """
     def __init__(self, points, data, vt=(0, 0, 1, 1), clean_nan=False):
         if clean_nan:
@@ -27,8 +27,6 @@ class Glyphset(glyphset.Glyphset):
         self.vt = vt
         self.shaper = glyphset.ToPoint(glyphset.idx(0), glyphset.idx(1))
 
-
-          
         if not is_identity_transform(vt):
             self.projected = np.empty_like(points, dtype=np.int32)
             _projectRects(vt, points, self.projected)
@@ -110,7 +108,7 @@ class Spread(ar.CellShader):
     TODO: Spread beyond the bounds of the input plot?
 
     * shape: Shape of the spread.  Supports "rect" and "circle"
-    * factor : How wide to spread? 
+    * factor : How wide to spread?
     * anti_alias: Can a value be fractionally spread into a cell
                   (default is false)
     """
@@ -140,34 +138,33 @@ class Spread(ar.CellShader):
                 k = np.ones(kShape)
                 r = self.factor//2
                 rr = r**2
-                for x in xrange(0, r):
-                    for y in xrange(0, r):
+                for x in range(0, r):
+                    for y in range(0, r):
                         if ((x - r)**2 + (y - r)**2) > rr:
-                            k[x,y] = 0
-                            k[x,-(y+1)] = 0
-                            k[-(x+1),-(y+1)] = 0
-                            k[-(x+1),y] = 0
+                            k[x, y] = 0
+                            k[x, -(y+1)] = 0
+                            k[-(x+1), -(y+1)] = 0
+                            k[-(x+1), y] = 0
                 return k
             else:
                 kShape = (self.factor+1, self.factor+1)
                 k = np.ones(kShape)
                 r = self.factor//2
                 rr = r**2
-                for x in xrange(0, r):
-                    for y in xrange(0, r):
+                for x in range(0, r):
+                    for y in range(0, r):
                         if ((x - r)**2 + (y - r)**2) == rr:
-                            k[x,y] = .5 
-                            k[x,-(y+1)] = .5
-                            k[-(x+1),-(y+1)] = .5
-                            k[-(x+1),y] = .5
+                            k[x, y] = .5
+                            k[x, -(y+1)] = .5
+                            k[-(x+1), -(y+1)] = .5
+                            k[-(x+1), y] = .5
                         elif ((x - r)**2 + (y - r)**2) > rr:
-                            k[x,y] = 0
-                            k[x,-(y+1)] = 0
-                            k[-(x+1),-(y+1)] = 0
-                            k[-(x+1),y] = 0
+                            k[x, y] = 0
+                            k[x, -(y+1)] = 0
+                            k[-(x+1), -(y+1)] = 0
+                            k[-(x+1), y] = 0
                 return k
             return k
-
 
     def shade(self, grid):
         k = self.make_k()
@@ -176,7 +173,7 @@ class Spread(ar.CellShader):
         out = np.empty_like(grid, dtype=out_dtype)
         if len(grid.shape) == 3:
             cats = grid.shape[2]
-            for cat in xrange(cats):
+            for cat in range(cats):
                 convolve(grid[:, :, cat], k, output=out[:, :, cat],
                          mode='constant', cval=0.0)
         else:
