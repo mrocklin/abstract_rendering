@@ -12,12 +12,12 @@ import ctypes
 import numpy as np
 import os
 import sys
+
 import distutils.sysconfig
-so_ext = distutils.sysconfig.get_config_var('SOABI') \
-        or distutils.sysconfig.get_config_var('EXT_SUFFIX') \
-        or distutils.sysconfig.get_config_var('SHLIB_SUFFIX') \
-        or distutils.sysconfig.get_config_var('SO') \
-        or '.so'
+so_ext = distutils.sysconfig.get_config_var('EXT_SUFFIX') \
+        or distutils.sysconfig.get_config_var('SHLIB_SUFFIX') 
+if not so_ext:
+    so_ext = distutils.sysconfig.get_config_var('SO') or '.so'
 
 def _type_lib(lib):
     from ctypes import c_void_p, c_size_t
@@ -37,13 +37,13 @@ def _type_lib(lib):
         lib.async_transform_d_start.restype = c_void_p
         lib.async_transform_d_end.argtypes = [c_void_p]
         lib.async_transform_d_next.argtypes = [c_void_p, c_void_p, c_void_p]
-
-_lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'transform{0}'.format(so_ext)))
+_lib_filename = 'transform{0}'.format(so_ext)
+_lib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), _lib_filename))
 _type_lib(_lib)
 
 try:
-    filename = "transform_libdispatch{0}".format(so_ext)
-    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), filename))
+    _lib_filename = "transform_libdispatch{0}".format(so_ext)
+    _lib_dispatch = ctypes.CDLL(os.path.join(os.path.dirname(__file__), _lib_filename))
     _type_lib(_lib_dispatch)
 except OSError:
     _lib_dispatch = _lib
