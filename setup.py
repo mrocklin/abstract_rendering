@@ -144,6 +144,7 @@ setup(name='abstract_rendering',
       url='https://github.com/JosephCottam/AbstractRendering',
       packages=['abstract_rendering'],
       package_dir={'abstract_rendering': 'abstract_rendering'},
+      package_data={'abstract_rendering': ['*.txt']},
       ext_modules=[
           transform,
           Extension('abstract_rendering._cntr',
