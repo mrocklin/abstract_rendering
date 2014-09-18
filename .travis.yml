@@ -23,5 +23,5 @@ install:
   - python setup.py install
 
 script: 
-  - cd tests
+  - cd abstract_rendering/tests
   - nosetests *.py

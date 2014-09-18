@@ -12,4 +12,3 @@ except Exception as e:
 
 __version_info__ = dict(zip(["major","minor","micro"], 
                             map(int, __version__.split("."))))
-
