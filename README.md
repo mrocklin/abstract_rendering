@@ -1,5 +1,6 @@
 Abstract Rendering
 ======
+[![Build Status](https://travis-ci.org/ContinuumIO/abstract_rendering.svg?branch=master)](https://travis-ci.org/ContinuumIO/abstract_rendering)
 
 Information visualization rests on the idea that a meaningful relationship
 can be drawn between pixels and data.  This is most often mediated by
