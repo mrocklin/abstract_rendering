@@ -63,6 +63,25 @@ class Attribute(unittest.TestCase):
         self.assertEqual(13, info(self.Has()))
         self.assertEqual("seven", info(self.HasNot()))
 
+class Encode(unittest.TestCase):
+    def test(self):
+        info = infos.encode(["zero", "one", "two"])
+
+        self.assertEqual(0, info("zero"))
+        self.assertEqual(1, info("one"))
+        self.assertEqual(2, info("two"))
+        self.assertEqual(3, info("stuff"))
+        self.assertEqual(3, info("more"))
+
+    def test_default(self):
+        info = infos.encode(["other", "one", "two"], defcat=0)
+        
+        self.assertEqual(0, info("other"))
+        self.assertEqual(1, info("one"))
+        self.assertEqual(2, info("two"))
+        self.assertEqual(0, info("stuff"))
+        self.assertEqual(0, info("more"))
+
 
 if __name__ == '__main__':
     unittest.main()
