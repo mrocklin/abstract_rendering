@@ -93,6 +93,6 @@ def bin1d(data, *binargs):
     result = into(np.ndarray, expr)
 
     counts = np.zeros(bins.shape)
-    inds = np.searchsorted(bins, result[expr.fields[0]])
+    inds = np.searchsorted(bins, result[expr.fields[0]].astype(bins.dtype))
     counts[inds] = result['count']
     return bins, counts
