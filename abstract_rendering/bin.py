@@ -1,4 +1,4 @@
-from blaze import Data, floor, into, compute
+from blaze import Data, floor, into, compute, by, merge
 from blaze.expr import Expr
 from blaze.expr.datetime import normalize_time_unit
 from datashape import isnumeric
@@ -25,13 +25,14 @@ def binrange(start, stop, *binargs):
     Works for arithmetic
 
     >>> binrange(0, 10, 2)
-    array([0,  2,  4,  6,  8, 10])
+    array([ 0,  2,  4,  6,  8, 10])
 
     And for time
 
-    >>> binrange(np.datetime64('2001-01-01'), np.datetime64('2001-02-26'), 1, 'week')
-    array(['2001-01-01', '2001-01-08', '2001-01-15', '2001-01-22',
-           '2001-01-29', '2001-02-05', '2001-02-12', '2001-02-19', '2001-02-26'], dtype='datetime64[D]')
+    >>> binrange(np.datetime64('2000-12-28'), np.datetime64('2001-02-22'), 1, 'week')
+    array(['2000-12-28', '2001-01-04', '2001-01-11', '2001-01-18',
+           '2001-01-25', '2001-02-01', '2001-02-08', '2001-02-15', '2001-02-22'], dtype='datetime64[W]')
+
     """
     if len(binargs) == 1:
         step = binargs[0]
@@ -64,23 +65,18 @@ def bin1d(data, *binargs):
 
     >>> data = [1, 2, 1, 5, 6]
     >>> bin1d(data, 2)
-    (array([0, 2, 4, 6], dtype=int32), array([2, 1, 1, 1], dtype=int32))
+    (array([0, 2, 4, 6]), array([ 2.,  1.,  1.,  1.]))
 
-    Alternatively provide a blaze function.  This function will be applied to
-    control the binning
+    For datetime handling provide a measure (1) and a unit (month)
 
     >>> data = [date(2000, 1, 1), date(2001, 2, 2), date(2001, 1, 2)]
-    >>> bin1d(data, blaze.year)
-    (array([2000, 2001], dtype=int32), array([1, 2], dtype=int32))
-
-    Or, if your data is already an interactive blaze expression
-
-    >>> data = blaze.Data([date(2000, 1, 1), date(2001, 2, 2), date(2001, 1, 2)])
-
-    Then just provide an expression over which to bin
-
-    >>> bin1d(data, 1, 'month')
-    (array([1, 2], dtype=int32), array([2, 1], dtype=int32))
+    >>> bins, values = bin1d(data, 1, 'month')
+    >>> bins
+    array(['2000-01', '2000-02', '2000-03', '2000-04', '2000-05', '2000-06',
+           '2000-07', '2000-08', '2000-09', '2000-10', '2000-11', '2000-12',
+           '2001-01', '2001-02'], dtype='datetime64[M]')
+    >>> values
+    array([ 1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  1.,  1.])
     """
     if not isinstance(data, Expr):
         data = Data(data, name='vals')
@@ -96,3 +92,45 @@ def bin1d(data, *binargs):
     inds = np.searchsorted(bins, result[expr.fields[0]].astype(bins.dtype))
     counts[inds] = result['count']
     return bins, counts
+
+
+def bin(expr, dimensions, **kwargs):
+    """
+    Split apply combine targetting regular grid
+
+    Parameters
+    ----------
+
+    expr : blaze Expression
+        The dataset on which you'd like to operate
+    dimensions : list of tuples of column/truncation args
+        sequence of tuples like (expr.latitude, 0.1) to determine binning
+    **kwargs : Reductions to perform
+        Reductions to perform using standard by or summary syntax
+
+    >>> x = Data([1, 1, 2, 3, 4, 8])
+    >>> bins, values = bin(x, [(x, 2)], count=x.count(), total=x.sum())
+    >>> bins
+    [array([0, 2, 4, 6, 8])]
+    >>> values
+    array([(2, 2), (2, 5), (1, 4), (0, 0), (1, 8)],
+          dtype=[('count', '<i4'), ('total', '<i8')])
+
+
+    """
+    dims = [binrange(compute(d[0].min().truncate(*d[1:])),
+                     compute(d[0].max().truncate(*d[1:])),
+                     *d[1:]) for d in dimensions]
+
+    expr = by(merge(*[d[0].truncate(*d[1:]) for d in dimensions]), **kwargs)
+    computed = into(np.ndarray, expr)
+
+    inds = np.concatenate(
+            [np.searchsorted(dims[i], computed[expr.fields[i]].astype(dims[i].dtype))
+                for i in range(len(dims))])
+
+    result = np.zeros(sum([d.shape for d in dims], ()),
+                      dtype=computed.dtype.descr[-len(kwargs):])
+
+    result[inds] = computed[expr.fields[-len(kwargs):]]
+    return dims, result

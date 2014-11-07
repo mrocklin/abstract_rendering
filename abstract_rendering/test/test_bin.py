@@ -53,3 +53,26 @@ def test_bin_1d_dates():
             date(2001, 1, 10), date(2001, 1, 15), date(2001, 1, 20),
             date(2001, 1, 25), date(2001, 1, 30)]
     assert list(counts) == [2, 0, 0, 0, 0, 0, 1]
+
+
+def test_bin():
+    x = Data([1, 1, 2, 3, 4, 8])
+    [bins], vals = bin(x, [(x, 2)], total=x.sum())
+    vals = vals[vals.dtype.names[0]]
+    assert eq(bins, [0, 2, 4, 6, 8])
+    assert eq(vals, [2, 5, 4, 0, 8])
+
+    [bins], vals = bin(x, [(x, 2)], count=x.count())
+    vals = vals[vals.dtype.names[0]]
+    assert eq(bins, [0, 2, 4, 6, 8])
+    assert eq(vals, [2, 2, 1, 0, 1])
+
+    [bins], vals = bin(x, [(x, 2)], count=x.count(), total=x.sum())
+    assert eq(bins, [0, 2, 4, 6, 8])
+    assert eq(vals, np.array([(2, 2), (2, 5), (1, 4), (0, 0), (1, 8)],
+                             dtype=[('count', 'i4'), ('total', 'i8')]))
+
+    [bins], vals = bin(x, [(x, 3)], count=x.count(), total=x.sum())
+    assert eq(bins, [0, 3, 6])
+    assert eq(vals, np.array([(3, 4), (2, 7), (1, 8)],
+                             dtype=[('count', 'i4'), ('total', 'i8')]))
