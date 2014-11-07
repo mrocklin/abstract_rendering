@@ -76,3 +76,16 @@ def test_bin():
     assert eq(bins, [0, 3, 6])
     assert eq(vals, np.array([(3, 4), (2, 7), (1, 8)],
                              dtype=[('count', 'i4'), ('total', 'i8')]))
+
+
+def test_bin_nd():
+    data = [(i, j, i + j) for i in range(4) for j in range(4)]
+    x = Data(data, dshape='16 * {a: int, b: int, c: int}')
+
+    bins, vals = bin(x, [(x.a, 2), (x.b, 2)], total=x.c.sum(), count=x.c.count())
+
+    expected = np.array([[(4, 4),  (4, 12)],
+                         [(4, 12), (4, 20)]],
+                        dtype=[('count', 'i4'), ('total', 'i4')])
+
+    assert eq(vals, expected)

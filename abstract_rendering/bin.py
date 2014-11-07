@@ -115,8 +115,6 @@ def bin(expr, dimensions, **kwargs):
     >>> values
     array([(2, 2), (2, 5), (1, 4), (0, 0), (1, 8)],
           dtype=[('count', '<i4'), ('total', '<i8')])
-
-
     """
     dims = [binrange(compute(d[0].min().truncate(*d[1:])),
                      compute(d[0].max().truncate(*d[1:])),
@@ -125,8 +123,7 @@ def bin(expr, dimensions, **kwargs):
     expr = by(merge(*[d[0].truncate(*d[1:]) for d in dimensions]), **kwargs)
     computed = into(np.ndarray, expr)
 
-    inds = np.concatenate(
-            [np.searchsorted(dims[i], computed[expr.fields[i]].astype(dims[i].dtype))
+    inds = tuple([np.searchsorted(dims[i], computed[expr.fields[i]].astype(dims[i].dtype))
                 for i in range(len(dims))])
 
     result = np.zeros(sum([d.shape for d in dims], ()),
