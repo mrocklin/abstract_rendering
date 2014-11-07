@@ -1,5 +1,6 @@
-from blaze import Data, floor, into
+from blaze import Data, floor, into, compute
 from blaze.expr import Expr
+from blaze.expr.datetime import normalize_time_unit
 from datashape import isnumeric
 from datetime import date
 import numpy as np
@@ -7,7 +8,44 @@ import blaze
 from numbers import Number
 
 
-def bin1d(data, binsize, scope=None):
+timedelta_types = {'year': 'Y',
+                   'month': 'M',
+                   'week': 'W',
+                   'day': 'D',
+                   'hour': 'h',
+                   'minute': 'm',
+                   'second': 's',
+                   'millisecond': 'ms',
+                   'microsecond': 'us',
+                   'nanosecond': 'ns'}
+
+def binrange(start, stop, *binargs):
+    """ Compute range of bins
+
+    Works for arithmetic
+
+    >>> binrange(0, 10, 2)
+    array([0,  2,  4,  6,  8, 10])
+
+    And for time
+
+    >>> binrange(np.datetime64('2001-01-01'), np.datetime64('2001-02-26'), 1, 'week')
+    array(['2001-01-01', '2001-01-08', '2001-01-15', '2001-01-22',
+           '2001-01-29', '2001-02-05', '2001-02-12', '2001-02-19', '2001-02-26'], dtype='datetime64[D]')
+    """
+    if len(binargs) == 1:
+        step = binargs[0]
+    else:
+        measure, unit = binargs
+        typ = timedelta_types[normalize_time_unit(unit)]
+
+        start = np.datetime64(start, typ)
+        stop = np.datetime64(stop, typ)
+        step = np.timedelta64(measure, typ)
+    return np.arange(start, stop + step, step)
+
+
+def bin1d(data, *binargs):
     """ Bin data by binsize
 
     Parameters
@@ -41,33 +79,20 @@ def bin1d(data, binsize, scope=None):
 
     Then just provide an expression over which to bin
 
-    >>> bin1d(data, data.month)
+    >>> bin1d(data, 1, 'month')
     (array([1, 2], dtype=int32), array([2, 1], dtype=int32))
     """
     if not isinstance(data, Expr):
-        data = Data(data)
+        data = Data(data, name='vals')
 
-    if (isinstance(binsize, type) and issubclass(binsize, Expr) or
-        callable(binsize) and binsize.__name__ in dir(data)):
-        f = binsize
-        binsize = f(data)
-        binsexpr = f(data).distinct().sort(binsize._name)
+    start = compute(data.min().truncate(*binargs))
+    stop = compute(data.max().truncate(*binargs))
+    bins = binrange(start, stop, *binargs)
 
-    elif isinstance(binsize, Number) and isnumeric(data.dshape):
-        n = binsize
-        binsize = floor(data / n)
-        binsexpr = floor((binsize * n).distinct().sort(binsize._name))
+    expr = data.truncate(*binargs).count_values()
+    result = into(np.ndarray, expr)
 
-    elif isinstance(binsize, Expr):
-        binsexpr = binsize.distinct().sort(binsize._name)
-
-    assert isinstance(binsize, Expr) and data in binsize
-
-    countsexpr = binsize.count_values().sort(binsize._name).count
-
-    bins = into(np.ndarray, binsexpr)
-    counts = into(np.ndarray, countsexpr)
-
+    counts = np.zeros(bins.shape)
+    inds = np.searchsorted(bins, result[expr.fields[0]])
+    counts[inds] = result['count']
     return bins, counts
-
-# TODO: This doesn't fill in bins with 0 counts
