@@ -94,6 +94,10 @@ def bin1d(data, *binargs):
     return bins, counts
 
 
+def _bound(arr, x):
+    arr[arr > x] = x
+    return arr
+
 def bin(expr, dimensions, **kwargs):
     """
     Split apply combine targetting regular grid
@@ -123,7 +127,10 @@ def bin(expr, dimensions, **kwargs):
     expr = by(merge(*[d[0].truncate(*d[1:]) for d in dimensions]), **kwargs)
     computed = into(np.ndarray, expr)
 
-    inds = tuple([np.searchsorted(dims[i], computed[expr.fields[i]].astype(dims[i].dtype))
+    inds = tuple([_bound(
+        np.searchsorted(dims[i],
+                        computed[expr.fields[i]].astype(dims[i].dtype)),
+                    len(dims[i]) - 1)
                 for i in range(len(dims))])
 
     result = np.zeros(sum([d.shape for d in dims], ()),
